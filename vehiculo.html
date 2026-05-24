@@ -94,18 +94,18 @@
                 CONTACTAR VENDEDOR
               </a>
 
-              <div class="vd-finance">
+              <div class="vd-finance" id="vdFinanceBox">
                 <div class="vd-finance-head">
                   <span class="vd-finance-brand">TRUST MOTORS</span>
                   <span class="vd-finance-tag">Financiamiento</span>
                 </div>
-                <p class="vd-finance-text">¿Quieres financiar este auto? Consulta tu crédito con nosotros.</p>
+                <p class="vd-finance-text">¿Quieres financiar este auto? Pre-aprueba tu crédito con nosotros.</p>
                 <div class="vd-finance-quote">
                   <span class="vd-finance-from">Desde</span>
                   <strong id="vdFinanceAmount">—</strong>
                   <span class="vd-finance-period">/ mes*</span>
                 </div>
-                <p class="vd-finance-note">*Cuota referencial a 48 meses. Sujeto a evaluación crediticia.</p>
+                <p class="vd-finance-note" id="vdFinanceNote">*Cuota referencial. Sujeto a evaluación crediticia.</p>
               </div>
             </div>
           </div>
@@ -133,6 +133,7 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/finance-utils.js"></script>
   <script src="vehiculo.js"></script>
 </body>
 </html>

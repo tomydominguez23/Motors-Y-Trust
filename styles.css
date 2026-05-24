@@ -620,6 +620,14 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   display: block;
 }
 
+.vehicle-finance-line {
+  display: block;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  margin-top: 0.35rem;
+}
+
 .vehicle-card-footer .btn {
   padding: .5rem 1rem;
   font-size: .8rem;
