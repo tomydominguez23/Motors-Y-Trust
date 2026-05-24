@@ -1278,6 +1278,16 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   min-height: 44px;
 }
 
+.vehicle-card-footer .btn-whatsapp.btn-view-detail {
+  background: var(--color-success);
+  color: #fff;
+  border: none;
+}
+
+.vehicle-card-footer .btn-whatsapp.btn-view-detail:hover {
+  background: #1ebe57;
+}
+
 .whatsapp-float {
   bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   right: max(1.25rem, env(safe-area-inset-right, 0px));

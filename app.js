@@ -222,6 +222,13 @@ function vehicleDetailUrl(id) {
   return `vehiculo.html?id=${encodeURIComponent(id)}`;
 }
 
+function whatsappVehicleUrl(vehicle) {
+  const text = encodeURIComponent(
+    `Hola Trust Motors, me interesa el ${vehicle.brand} ${vehicle.model} ${vehicle.year} (${formatPrice(vehicle.price)}). ¿Está disponible?`
+  );
+  return `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${text}`;
+}
+
 /* ── Vehicle Card ────────────────────── */
 
 function createVehicleCard(vehicle) {
@@ -276,7 +283,7 @@ function createVehicleCard(vehicle) {
           <span class="vehicle-price-sub">Precio contado</span>
           ${financeLine}
         </div>
-        <a href="${vehicleDetailUrl(vehicle.id)}" class="btn btn-primary btn-view-detail">Ver publicación</a>
+        <a href="${whatsappVehicleUrl(vehicle)}" class="btn btn-whatsapp btn-view-detail" target="_blank" rel="noopener">WhatsApp</a>
       </div>
     </div>
   `;

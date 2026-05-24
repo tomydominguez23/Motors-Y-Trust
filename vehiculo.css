@@ -32,6 +32,19 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.vd-header .hamburger span {
+  background: #fff;
+}
+
+.vd-header .nav.open {
+  background: var(--color-primary);
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+.vd-header .nav.open .nav-link {
+  color: #fff;
+}
+
 .vd-main {
   padding: 6.5rem 0 3rem;
   min-height: 70vh;
@@ -310,6 +323,10 @@
   color: var(--color-primary);
 }
 
+.vd-cta-wrap {
+  margin-bottom: 1.25rem;
+}
+
 .vd-btn-whatsapp {
   width: 100%;
   display: flex;
@@ -320,10 +337,10 @@
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   padding: 0.95rem 1rem;
   border-radius: 10px;
-  margin-bottom: 0.65rem;
+  min-height: 48px;
   transition: var(--transition);
 }
 
@@ -332,25 +349,9 @@
   transform: translateY(-1px);
 }
 
-.vd-btn-seller {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: var(--color-accent);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: 0.03em;
-  padding: 0.95rem 1rem;
-  border-radius: 10px;
-  margin-bottom: 1.25rem;
-  transition: var(--transition);
-}
-
-.vd-btn-seller:hover {
-  filter: brightness(1.08);
+.vd-header-wa {
+  padding: 0.5rem 0.65rem;
+  border-radius: 50px;
 }
 
 .vd-finance {
@@ -512,23 +513,109 @@
 
 @media (max-width: 640px) {
   .vd-main {
-    padding-top: 5.5rem;
+    padding-top: 4.75rem;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .vd-info-card {
+    padding: 1rem;
+  }
+
+  .vd-info-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vd-save {
+    align-self: flex-start;
+    min-height: 44px;
   }
 
   .vd-specs-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+  }
+
+  .vd-spec-item {
+    padding: 0.6rem;
   }
 
   .vd-title {
-    font-size: 1.35rem;
+    font-size: 1.25rem;
+    word-break: break-word;
+  }
+
+  .vd-subtitle {
+    font-size: 0.75rem;
   }
 
   .vd-price {
-    font-size: 1.65rem;
+    font-size: 1.5rem;
+  }
+
+  .vd-gallery-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+  }
+
+  .vd-gallery-prev { left: 6px; }
+  .vd-gallery-next { right: 6px; }
+
+  .vd-gallery-thumbs {
+    gap: 0.4rem;
+    -webkit-overflow-scrolling: touch;
   }
 
   .vd-gallery-thumbs img {
-    width: 72px;
-    height: 54px;
+    width: 64px;
+    height: 48px;
+  }
+
+  .vd-finance-quote strong {
+    font-size: 1.35rem;
+  }
+
+  .vd-description-card {
+    padding: 1rem;
+  }
+
+  .vd-description-card p {
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+
+  .vd-related-grid {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.5rem;
+  }
+
+  .vd-related-card {
+    min-width: 220px;
+    flex-shrink: 0;
+  }
+
+  /* WhatsApp fijo al pie en móvil */
+  .vd-cta-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 85;
+    margin: 0;
+    padding: 0.65rem 1rem;
+    padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .vd-cta-wrap .vd-btn-whatsapp {
+    margin: 0;
+    font-size: 0.85rem;
   }
 }

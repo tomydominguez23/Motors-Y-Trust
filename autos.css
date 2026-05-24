@@ -4,10 +4,11 @@
   padding-top: 72px;
   background: var(--color-bg-soft);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .catalog-main {
-  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 .catalog-topbar {
@@ -403,29 +404,27 @@
 }
 
 .catalog-card-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: .5rem;
   margin-top: auto;
 }
 
-.catalog-card-actions .btn {
+.catalog-card-actions .btn-whatsapp-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  font-size: .78rem;
-  padding: .65rem .5rem;
-  min-height: 44px;
-}
-
-.catalog-card-actions .btn-contact {
-  background: var(--color-accent);
+  gap: .5rem;
+  background: var(--color-success);
   color: #fff;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .02em;
+  font-size: .85rem;
+  padding: .75rem 1rem;
+  min-height: 48px;
+  border-radius: var(--radius);
+  transition: var(--transition);
 }
 
-.catalog-card-actions .btn-contact:hover {
-  background: var(--color-primary);
+.catalog-card-actions .btn-whatsapp-card:hover {
+  filter: brightness(1.05);
 }
 
 .catalog-empty {
@@ -552,8 +551,28 @@
     padding-right: 1rem;
   }
 
-  .catalog-card-actions {
-    grid-template-columns: 1fr;
+  .catalog-topbar-inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .catalog-filters-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .catalog-card-prices {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .catalog-card-prices .price {
+    text-align: left;
+  }
+
+  .catalog-card-finance {
+    text-align: left;
   }
 
   .catalog-toolbar {
