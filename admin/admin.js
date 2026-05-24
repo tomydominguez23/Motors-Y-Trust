@@ -8,9 +8,31 @@
 const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 
+if (!window.supabase) {
+  document.body.innerHTML = '<p style="padding:2rem;font-family:sans-serif;">No se pudo cargar Supabase. Revisa tu conexión e intenta de nuevo.</p>';
+  throw new Error('Supabase JS no cargado');
+}
+
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ── Helpers ─────────────────────────── */
+
+function formatAuthError(error) {
+  if (!error) return 'No se pudo iniciar sesión. Intenta nuevamente.';
+  const msg = error.message || '';
+
+  if (msg.includes('Invalid login credentials')) {
+    return 'Email o contraseña incorrectos. El acceso al panel usa usuarios de Supabase → Authentication → Users (no la tabla «clientes»). Crea el usuario ahí con contraseña o márcalo como confirmado.';
+  }
+  if (msg.includes('Email not confirmed')) {
+    return 'Debes confirmar tu correo antes de entrar. Revisa tu bandeja de entrada o, en Supabase, desactiva «Confirm email» en Authentication → Providers → Email.';
+  }
+  if (msg.includes('User not found')) {
+    return 'No hay ningún usuario con ese email en Authentication. Créalo en Supabase → Authentication → Users.';
+  }
+
+  return msg;
+}
 
 function formatPrice(n) {
   return '$' + Number(n).toLocaleString('es-CL');
@@ -69,9 +91,21 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const errEl = document.getElementById('loginError');
   errEl.textContent = '';
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = 'Ingresando...';
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Iniciar Sesión';
+
   if (error) {
-    errEl.textContent = 'Credenciales incorrectas. Intenta nuevamente.';
+    errEl.textContent = formatAuthError(error);
+    console.error('Login error:', error.message, error);
   } else {
     showAdmin();
     loadDashboard();
@@ -958,5 +992,12 @@ function debounce(fn, ms) {
 }
 
 /* ── Init ────────────────────────────── */
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (session) {
+    showAdmin();
+    loadDashboard();
+  }
+});
 
 checkSession();
