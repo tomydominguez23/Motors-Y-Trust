@@ -58,3 +58,51 @@ CREATE POLICY "Temporal: anon actualiza imágenes"
 DROP POLICY IF EXISTS "Temporal: anon elimina imágenes" ON storage.objects;
 CREATE POLICY "Temporal: anon elimina imágenes"
   ON storage.objects FOR DELETE TO anon USING (bucket_id = 'vehicles');
+
+-- Imágenes del sitio (logo, banners)
+CREATE TABLE IF NOT EXISTS site_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO site_settings (key, value) VALUES
+  ('logo_header', ''),
+  ('logo_footer', ''),
+  ('hero_banner', ''),
+  ('hero_background', ''),
+  ('about_image', '')
+ON CONFLICT (key) DO NOTHING;
+
+DROP POLICY IF EXISTS "Temporal: anon site_settings" ON site_settings;
+CREATE POLICY "Temporal: anon site_settings"
+  ON site_settings FOR ALL TO anon USING (true) WITH CHECK (true);
+
+GRANT SELECT ON site_settings TO anon;
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'site',
+  'site',
+  true,
+  10485760,
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']::text[]
+)
+ON CONFLICT (id) DO UPDATE SET public = EXCLUDED.public;
+
+DROP POLICY IF EXISTS "Temporal: lectura pública site" ON storage.objects;
+CREATE POLICY "Temporal: lectura pública site"
+  ON storage.objects FOR SELECT USING (bucket_id = 'site');
+
+DROP POLICY IF EXISTS "Temporal: anon sube site" ON storage.objects;
+CREATE POLICY "Temporal: anon sube site"
+  ON storage.objects FOR INSERT TO anon WITH CHECK (bucket_id = 'site');
+
+DROP POLICY IF EXISTS "Temporal: anon actualiza site" ON storage.objects;
+CREATE POLICY "Temporal: anon actualiza site"
+  ON storage.objects FOR UPDATE TO anon
+  USING (bucket_id = 'site') WITH CHECK (bucket_id = 'site');
+
+DROP POLICY IF EXISTS "Temporal: anon elimina site" ON storage.objects;
+CREATE POLICY "Temporal: anon elimina site"
+  ON storage.objects FOR DELETE TO anon USING (bucket_id = 'site');

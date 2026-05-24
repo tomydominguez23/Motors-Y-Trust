@@ -16,7 +16,8 @@ if (!window.supabase) {
   throw new Error('Supabase JS no cargado');
 }
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+/** Cliente Supabase (sb evita choques con el global window.supabase del CDN) */
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     detectSessionInUrl: true,
@@ -71,6 +72,10 @@ function formatDate(d) {
 
 function showToast(msg, type = '') {
   const container = document.getElementById('toastContainer');
+  if (!container) {
+    console.warn('[Admin]', msg);
+    return;
+  }
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.textContent = msg;
@@ -89,16 +94,27 @@ function escapeHtml(str) {
 }
 
 function openModal(title, bodyHTML, options = {}) {
-  document.getElementById('adminModalTitle').textContent = title;
-  document.getElementById('adminModalBody').innerHTML = bodyHTML;
-  const modalBox = document.querySelector('#adminModal .admin-modal');
+  const modal = document.getElementById('adminModal');
+  const titleEl = document.getElementById('adminModalTitle');
+  const bodyEl = document.getElementById('adminModalBody');
+  if (!modal || !titleEl || !bodyEl) {
+    console.error('Modal del admin no encontrado en el HTML');
+    showToast('Error de interfaz: recarga la página (Ctrl+Shift+R)', 'error');
+    return;
+  }
+  titleEl.textContent = title;
+  bodyEl.innerHTML = bodyHTML;
+  const modalBox = modal.querySelector('.admin-modal');
   modalBox?.classList.toggle('modal-wide', !!options.wide);
-  document.getElementById('adminModal').classList.add('active');
+  modal.classList.add('active');
+  document.body.classList.add('admin-modal-open');
+  modal.scrollTop = 0;
 }
 
 function closeModal() {
-  document.getElementById('adminModal').classList.remove('active');
+  document.getElementById('adminModal')?.classList.remove('active');
   document.querySelector('#adminModal .admin-modal')?.classList.remove('modal-wide');
+  document.body.classList.remove('admin-modal-open');
   revokeVehiclePreviewUrls();
 }
 
@@ -123,7 +139,7 @@ async function updateSupabaseStatus() {
   el.textContent = 'Comprobando conexión con Supabase…';
   el.className = 'supabase-status pending';
 
-  const { error: tableError } = await supabase.from('vehicles').select('id').limit(1);
+  const { error: tableError } = await sb.from('vehicles').select('id').limit(1);
   if (tableError) {
     el.textContent = `Error Supabase: ${tableError.message}. Ejecuta sql/open_admin_no_auth.sql en el SQL Editor.`;
     el.className = 'supabase-status error';
@@ -131,7 +147,7 @@ async function updateSupabaseStatus() {
     return;
   }
 
-  const { error: viewError } = await supabase.from('dashboard_summary').select('*').single();
+  const { error: viewError } = await sb.from('dashboard_summary').select('*').single();
   if (viewError) {
     el.textContent = `Conectado, pero falta la vista dashboard: ${viewError.message}`;
     el.className = 'supabase-status warn';
@@ -151,7 +167,7 @@ async function updateSupabaseStatus() {
 
 async function isStorageReady() {
   if (storageBucketReady !== null) return storageBucketReady;
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).list('', { limit: 1 });
+  const { error } = await sb.storage.from(STORAGE_BUCKET).list('', { limit: 1 });
   storageBucketReady = !error;
   return storageBucketReady;
 }
@@ -171,7 +187,7 @@ async function checkSession() {
   }
 
   setAuthMode(true);
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
   if (session) {
     initAdminPanel();
   }
@@ -198,7 +214,7 @@ loginForm.addEventListener('submit', async (e) => {
   btn.disabled = true;
   btn.textContent = 'Ingresando...';
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
   btn.disabled = false;
   btn.textContent = 'Iniciar Sesión';
@@ -224,7 +240,7 @@ document.getElementById('btnResetPassword')?.addEventListener('click', async () 
     return;
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.href.split('#')[0],
   });
 
@@ -245,7 +261,7 @@ document.getElementById('btnMagicLink')?.addEventListener('click', async () => {
   const btn = document.getElementById('btnMagicLink');
   btn.disabled = true;
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await sb.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: false,
@@ -263,7 +279,7 @@ document.getElementById('btnMagicLink')?.addEventListener('click', async () => {
 });
 
 document.getElementById('btnLogout')?.addEventListener('click', async () => {
-  await supabase.auth.signOut();
+  await sb.auth.signOut();
   setAuthMode(true);
   const loginEl = document.getElementById('loginScreen');
   if (loginEl) loginEl.hidden = false;
@@ -284,6 +300,7 @@ function showAdmin() {
 const pageMap = {
   dashboard: { el: 'pageDashboard', title: 'Dashboard', load: loadDashboard },
   vehicles: { el: 'pageVehicles', title: 'Vehículos', load: loadVehicles },
+  siteMedia: { el: 'pageSiteMedia', title: 'Imágenes del sitio', load: loadSiteMedia },
   sales: { el: 'pageSales', title: 'Ventas', load: loadSales },
   customers: { el: 'pageCustomers', title: 'Clientes', load: loadCustomers },
   inquiries: { el: 'pageInquiries', title: 'Consultas', load: loadInquiries },
@@ -329,7 +346,7 @@ window.loadPageData = loadPageData;
 /* ── Dashboard ───────────────────────── */
 
 async function loadDashboard() {
-  const { data: summary } = await supabase.from('dashboard_summary').select('*').single();
+  const { data: summary } = await sb.from('dashboard_summary').select('*').single();
 
   if (summary) {
     document.getElementById('statAvailable').textContent = summary.vehicles_available;
@@ -346,10 +363,10 @@ async function loadDashboard() {
     }
   }
 
-  const { data: monthly } = await supabase.from('monthly_sales').select('*');
+  const { data: monthly } = await sb.from('monthly_sales').select('*');
   renderChart(monthly || []);
 
-  const { data: recentSalesData } = await supabase
+  const { data: recentSalesData } = await sb
     .from('sales_detail')
     .select('*')
     .order('created_at', { ascending: false })
@@ -373,7 +390,7 @@ async function loadDashboard() {
     recentContainer.innerHTML = '<p class="text-muted">No hay ventas registradas aún</p>';
   }
 
-  const { data: recentInq } = await supabase
+  const { data: recentInq } = await sb
     .from('inquiries')
     .select('*, vehicles(brand, model, year)')
     .order('created_at', { ascending: false })
@@ -679,12 +696,12 @@ async function deleteVehicleStorageFiles(vehicleId, imageUrls = []) {
     const p = storagePathFromPublicUrl(url);
     if (p) paths.add(p);
   });
-  const { data: listed } = await supabase.storage.from(STORAGE_BUCKET).list(vehicleId, { limit: 200 });
+  const { data: listed } = await sb.storage.from(STORAGE_BUCKET).list(vehicleId, { limit: 200 });
   (listed || []).forEach((f) => {
     if (f?.name) paths.add(`${vehicleId}/${f.name}`);
   });
   if (paths.size === 0) return;
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([...paths]);
+  const { error } = await sb.storage.from(STORAGE_BUCKET).remove([...paths]);
   if (error) console.warn('Storage cleanup:', error.message);
 }
 
@@ -706,13 +723,13 @@ async function uploadVehicleImages(vehicleId) {
       const fileToUpload = await compressImageFile(item.file);
       const safeName = fileToUpload.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `${vehicleId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
-      const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, fileToUpload, {
+      const { error } = await sb.storage.from(STORAGE_BUCKET).upload(path, fileToUpload, {
         cacheControl: '3600',
         upsert: false,
         contentType: fileToUpload.type || 'image/jpeg',
       });
       if (error) throw new Error('Error subiendo imagen: ' + error.message);
-      const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+      const { data } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(path);
       urls.push(data.publicUrl);
     }
   }
@@ -729,7 +746,7 @@ async function uploadVehicleImages(vehicleId) {
 /* ── Vehicles CRUD ───────────────────── */
 
 async function loadVehicles() {
-  let query = supabase.from('vehicles').select('*').order('created_at', { ascending: false });
+  let query = sb.from('vehicles').select('*').order('created_at', { ascending: false });
 
   const statusFilter = document.getElementById('vehicleStatusFilter')?.value;
   if (statusFilter) query = query.eq('status', statusFilter);
@@ -750,11 +767,17 @@ async function loadVehicles() {
   }
 
   const tbody = document.getElementById('vehiclesBody');
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:2rem;">No hay vehículos</td></tr>';
+  if (!tbody) {
+    console.error('No se encontró #vehiclesBody');
     return;
   }
 
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:2rem;">No hay vehículos con ese filtro</td></tr>';
+    return;
+  }
+
+  try {
   tbody.innerHTML = filtered.map(v => {
     const thumb = v.images && v.images[0]
       ? `<img src="${escapeHtml(v.images[0])}" alt="" class="vehicle-thumb">`
@@ -787,6 +810,10 @@ async function loadVehicles() {
       </td>
     </tr>`;
   }).join('');
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="8" class="text-muted" style="text-align:center;padding:2rem;color:var(--danger);">Error mostrando lista: ${escapeHtml(err.message)}</td></tr>`;
+  }
 }
 
 function vehicleFormHTML(v = {}) {
@@ -931,7 +958,7 @@ function vehicleFormHTML(v = {}) {
 }
 
 async function loadBrandSuggestions() {
-  const { data } = await supabase.from('vehicles').select('brand');
+  const { data } = await sb.from('vehicles').select('brand');
   const brands = [...new Set((data || []).map((r) => r.brand).filter(Boolean))].sort();
   const list = document.getElementById('brandSuggestions');
   if (list) {
@@ -1016,7 +1043,7 @@ async function saveVehicle(e) {
     let vehicleId = existingId;
 
     if (!vehicleId) {
-      const { data: created, error: createError } = await supabase
+      const { data: created, error: createError } = await sb
         .from('vehicles')
         .insert({ ...payload, images: [] })
         .select('id')
@@ -1026,7 +1053,7 @@ async function saveVehicle(e) {
     }
 
     const images = await uploadVehicleImages(vehicleId);
-    const { error: updateError } = await supabase
+    const { error: updateError } = await sb
       .from('vehicles')
       .update({ ...payload, images })
       .eq('id', vehicleId);
@@ -1049,21 +1076,21 @@ async function saveVehicle(e) {
 }
 
 window.editVehicle = async function(id) {
-  const { data } = await supabase.from('vehicles').select('*').eq('id', id).single();
+  const { data } = await sb.from('vehicles').select('*').eq('id', id).single();
   if (!data) return;
   openVehicleModal(data);
 };
 
 window.toggleFeatured = async function(id, checked) {
-  const { error } = await supabase.from('vehicles').update({ is_featured: checked }).eq('id', id);
+  const { error } = await sb.from('vehicles').update({ is_featured: checked }).eq('id', id);
   if (error) showToast('Error actualizando', 'error');
 };
 
 window.deleteVehicle = async function(id) {
   if (!confirm('¿Estás seguro de eliminar este vehículo? Esta acción no se puede deshacer.')) return;
-  const { data: row } = await supabase.from('vehicles').select('images').eq('id', id).single();
+  const { data: row } = await sb.from('vehicles').select('images').eq('id', id).single();
   await deleteVehicleStorageFiles(id, row?.images || []);
-  const { error } = await supabase.from('vehicles').delete().eq('id', id);
+  const { error } = await sb.from('vehicles').delete().eq('id', id);
   if (error) {
     showToast('Error: ' + error.message, 'error');
   } else {
@@ -1073,10 +1100,144 @@ window.deleteVehicle = async function(id) {
   }
 };
 
+/* ── Site media (logo, banners) ──────── */
+
+const SITE_BUCKET = 'site';
+let siteBucketReady = null;
+
+const SITE_ASSET_DEFS = [
+  { key: 'logo_header', label: 'Logo (cabecera)', hint: 'PNG o SVG, fondo transparente. Altura ~40px.' },
+  { key: 'logo_footer', label: 'Logo (pie de página)', hint: 'Versión para el footer.' },
+  { key: 'hero_banner', label: 'Banner principal (hero)', hint: 'Imagen grande del inicio (JPG/WebP).' },
+  { key: 'hero_background', label: 'Fondo del hero', hint: 'Imagen de fondo opcional detrás del texto.' },
+  { key: 'about_image', label: 'Imagen «Nosotros»', hint: 'Foto o banner de la sección Sobre Nosotros.' },
+];
+
+async function isSiteBucketReady() {
+  if (siteBucketReady !== null) return siteBucketReady;
+  const { error } = await sb.storage.from(SITE_BUCKET).list('', { limit: 1 });
+  siteBucketReady = !error;
+  return siteBucketReady;
+}
+
+async function loadSiteMedia() {
+  const grid = document.getElementById('siteMediaGrid');
+  if (!grid) return;
+
+  grid.innerHTML = '<p class="text-muted">Cargando imágenes del sitio…</p>';
+
+  const { data, error } = await sb.from('site_settings').select('key, value');
+  if (error) {
+    grid.innerHTML = `<div class="site-media-error">No se pudo leer site_settings: ${escapeHtml(error.message)}. Ejecuta <code>sql/setup_completo.sql</code> en Supabase.</div>`;
+    return;
+  }
+
+  const map = {};
+  (data || []).forEach((row) => { map[row.key] = row.value || ''; });
+
+  const bucketOk = await isSiteBucketReady();
+
+  grid.innerHTML = SITE_ASSET_DEFS.map((def) => {
+    const url = map[def.key] || '';
+    const preview = url
+      ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(def.label)}">`
+      : '<div class="site-media-placeholder">Sin imagen</div>';
+    return `
+      <article class="site-media-card" data-asset-key="${escapeHtml(def.key)}">
+        <div class="site-media-preview">${preview}</div>
+        <div class="site-media-body">
+          <h3>${escapeHtml(def.label)}</h3>
+          <p class="text-muted">${escapeHtml(def.hint)}</p>
+          <input type="hidden" class="site-asset-url" value="${escapeHtml(url)}">
+          <div class="site-media-actions">
+            <input type="file" class="site-asset-file" accept="image/*" hidden>
+            <button type="button" class="btn btn-outline btn-sm btn-site-upload" ${bucketOk ? '' : 'disabled title="Ejecuta setup_completo.sql"'}>Subir</button>
+            <input type="url" class="site-asset-url-input" placeholder="https://…" value="${escapeHtml(url)}">
+            <button type="button" class="btn btn-primary btn-sm btn-site-save">Guardar</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.site-media-card').forEach((card) => bindSiteMediaCard(card));
+}
+
+function bindSiteMediaCard(card) {
+  const key = card.dataset.assetKey;
+  const fileInput = card.querySelector('.site-asset-file');
+  const uploadBtn = card.querySelector('.btn-site-upload');
+  const urlInput = card.querySelector('.site-asset-url-input');
+  const saveBtn = card.querySelector('.btn-site-save');
+  const hiddenUrl = card.querySelector('.site-asset-url');
+
+  uploadBtn?.addEventListener('click', () => fileInput?.click());
+
+  fileInput?.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    if (!(await isSiteBucketReady())) {
+      showToast('Falta bucket «site» — ejecuta sql/setup_completo.sql', 'error');
+      return;
+    }
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Subiendo…';
+    try {
+      const compressed = await compressImageFile(file);
+      const safeName = compressed.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${key}/${Date.now()}-${safeName}`;
+      const { error } = await sb.storage.from(SITE_BUCKET).upload(path, compressed, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: compressed.type || 'image/jpeg',
+      });
+      if (error) throw error;
+      const { data } = sb.storage.from(SITE_BUCKET).getPublicUrl(path);
+      hiddenUrl.value = data.publicUrl;
+      urlInput.value = data.publicUrl;
+      updateSiteMediaPreview(card, data.publicUrl);
+      showToast('Imagen subida. Pulsa Guardar para publicar en la web.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Error al subir', 'error');
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = 'Subir';
+      fileInput.value = '';
+    }
+  });
+
+  saveBtn?.addEventListener('click', async () => {
+    const value = urlInput.value.trim();
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Guardando…';
+    const { error } = await sb.from('site_settings').upsert(
+      { key, value, updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Guardar';
+    if (error) {
+      showToast('Error: ' + error.message, 'error');
+      return;
+    }
+    hiddenUrl.value = value;
+    updateSiteMediaPreview(card, value);
+    showToast('Imagen del sitio actualizada', 'success');
+  });
+}
+
+function updateSiteMediaPreview(card, url) {
+  const box = card.querySelector('.site-media-preview');
+  if (!box) return;
+  box.innerHTML = url
+    ? `<img src="${escapeHtml(url)}" alt="">`
+    : '<div class="site-media-placeholder">Sin imagen</div>';
+}
+
 /* ── Sales CRUD ──────────────────────── */
 
 async function loadSales() {
-  let query = supabase.from('sales_detail').select('*');
+  let query = sb.from('sales_detail').select('*');
 
   const statusFilter = document.getElementById('saleStatusFilter').value;
   if (statusFilter) query = query.eq('status', statusFilter);
@@ -1121,12 +1282,12 @@ async function loadSales() {
 }
 
 async function saleFormHTML(s = {}) {
-  const { data: availableVehicles } = await supabase
+  const { data: availableVehicles } = await sb
     .from('vehicles').select('id, brand, model, year, price')
     .in('status', ['disponible', 'reservado'])
     .order('brand');
 
-  const { data: customers } = await supabase
+  const { data: customers } = await sb
     .from('customers').select('id, name, rut')
     .order('name');
 
@@ -1196,7 +1357,7 @@ async function saleFormHTML(s = {}) {
 }
 
 window.editSale = async function(id) {
-  const { data } = await supabase.from('sales').select('*').eq('id', id).single();
+  const { data } = await sb.from('sales').select('*').eq('id', id).single();
   if (!data) return;
   openModal('Editar Venta', await saleFormHTML(data));
   document.getElementById('saleForm').addEventListener('submit', saveSale);
@@ -1217,9 +1378,9 @@ async function saveSale(e) {
 
   let error;
   if (id) {
-    ({ error } = await supabase.from('sales').update(payload).eq('id', id));
+    ({ error } = await sb.from('sales').update(payload).eq('id', id));
   } else {
-    ({ error } = await supabase.from('sales').insert(payload));
+    ({ error } = await sb.from('sales').insert(payload));
   }
 
   if (error) {
@@ -1233,7 +1394,7 @@ async function saveSale(e) {
 
 window.deleteSale = async function(id) {
   if (!confirm('¿Eliminar esta venta?')) return;
-  const { error } = await supabase.from('sales').delete().eq('id', id);
+  const { error } = await sb.from('sales').delete().eq('id', id);
   if (error) showToast('Error: ' + error.message, 'error');
   else { showToast('Venta eliminada', 'success'); loadSales(); }
 };
@@ -1242,7 +1403,7 @@ window.deleteSale = async function(id) {
 
 async function loadCustomers() {
   const search = document.getElementById('customerSearch').value.trim().toLowerCase();
-  const { data, error } = await supabase.from('customers').select('*').order('name');
+  const { data, error } = await sb.from('customers').select('*').order('name');
   if (error) { showToast('Error cargando clientes', 'error'); return; }
 
   let filtered = data || [];
@@ -1319,7 +1480,7 @@ function customerFormHTML(c = {}) {
 }
 
 window.editCustomer = async function(id) {
-  const { data } = await supabase.from('customers').select('*').eq('id', id).single();
+  const { data } = await sb.from('customers').select('*').eq('id', id).single();
   if (!data) return;
   openModal('Editar Cliente', customerFormHTML(data));
   document.getElementById('customerForm').addEventListener('submit', saveCustomer);
@@ -1339,9 +1500,9 @@ async function saveCustomer(e) {
 
   let error;
   if (id) {
-    ({ error } = await supabase.from('customers').update(payload).eq('id', id));
+    ({ error } = await sb.from('customers').update(payload).eq('id', id));
   } else {
-    ({ error } = await supabase.from('customers').insert(payload));
+    ({ error } = await sb.from('customers').insert(payload));
   }
 
   if (error) showToast('Error: ' + error.message, 'error');
@@ -1350,7 +1511,7 @@ async function saveCustomer(e) {
 
 window.deleteCustomer = async function(id) {
   if (!confirm('¿Eliminar este cliente?')) return;
-  const { error } = await supabase.from('customers').delete().eq('id', id);
+  const { error } = await sb.from('customers').delete().eq('id', id);
   if (error) showToast('Error: ' + error.message, 'error');
   else { showToast('Cliente eliminado', 'success'); loadCustomers(); }
 };
@@ -1358,7 +1519,7 @@ window.deleteCustomer = async function(id) {
 /* ── Inquiries ───────────────────────── */
 
 async function loadInquiries() {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('inquiries')
     .select('*, vehicles(brand, model, year)')
     .order('created_at', { ascending: false });
@@ -1398,14 +1559,14 @@ async function loadInquiries() {
 }
 
 window.markRead = async function(id) {
-  await supabase.from('inquiries').update({ is_read: true }).eq('id', id);
+  await sb.from('inquiries').update({ is_read: true }).eq('id', id);
   loadInquiries();
   loadDashboard();
 };
 
 window.deleteInquiry = async function(id) {
   if (!confirm('¿Eliminar esta consulta?')) return;
-  await supabase.from('inquiries').delete().eq('id', id);
+  await sb.from('inquiries').delete().eq('id', id);
   showToast('Consulta eliminada', 'success');
   loadInquiries();
 };
@@ -1413,7 +1574,7 @@ window.deleteInquiry = async function(id) {
 /* ── Expenses CRUD ───────────────────── */
 
 async function loadExpenses() {
-  const { data: expenses, error } = await supabase
+  const { data: expenses, error } = await sb
     .from('expenses')
     .select('*, vehicles(brand, model, year)')
     .order('date', { ascending: false });
@@ -1459,7 +1620,7 @@ async function loadExpenses() {
 }
 
 async function expenseFormHTML(e = {}) {
-  const { data: vehicles } = await supabase
+  const { data: vehicles } = await sb
     .from('vehicles').select('id, brand, model, year').order('brand');
 
   const vehicleOptions = (vehicles || []).map(v =>
@@ -1505,7 +1666,7 @@ async function expenseFormHTML(e = {}) {
 }
 
 window.editExpense = async function(id) {
-  const { data } = await supabase.from('expenses').select('*').eq('id', id).single();
+  const { data } = await sb.from('expenses').select('*').eq('id', id).single();
   if (!data) return;
   openModal('Editar Gasto', await expenseFormHTML(data));
   document.getElementById('expenseForm').addEventListener('submit', saveExpense);
@@ -1524,9 +1685,9 @@ async function saveExpense(e) {
 
   let error;
   if (id) {
-    ({ error } = await supabase.from('expenses').update(payload).eq('id', id));
+    ({ error } = await sb.from('expenses').update(payload).eq('id', id));
   } else {
-    ({ error } = await supabase.from('expenses').insert(payload));
+    ({ error } = await sb.from('expenses').insert(payload));
   }
 
   if (error) showToast('Error: ' + error.message, 'error');
@@ -1535,7 +1696,7 @@ async function saveExpense(e) {
 
 window.deleteExpense = async function(id) {
   if (!confirm('¿Eliminar este gasto?')) return;
-  await supabase.from('expenses').delete().eq('id', id);
+  await sb.from('expenses').delete().eq('id', id);
   showToast('Gasto eliminado', 'success');
   loadExpenses();
 };
@@ -1585,7 +1746,7 @@ function initBindings() {
   });
 
   bindOptional('btnMarkAllRead', 'click', async () => {
-    await supabase.from('inquiries').update({ is_read: true }).eq('is_read', false);
+    await sb.from('inquiries').update({ is_read: true }).eq('is_read', false);
     showToast('Todas marcadas como leídas', 'success');
     loadInquiries();
     loadDashboard();
@@ -1601,7 +1762,7 @@ function bootAdmin() {
   try {
     initBindings();
     if (REQUIRE_AUTH) {
-      supabase.auth.onAuthStateChange((_event, session) => {
+      sb.auth.onAuthStateChange((_event, session) => {
         if (session) initAdminPanel();
       });
       setupAuth();
@@ -1609,12 +1770,16 @@ function bootAdmin() {
     } else {
       initAdminPanel();
     }
+    window.__adminReady = true;
+    window.dispatchEvent(new CustomEvent('admin-ready'));
   } catch (err) {
     console.error(err);
     document.getElementById('adminLayout').style.display = 'flex';
     showToast('Error al iniciar el panel: ' + err.message, 'error');
   }
 }
+
+window.closeAdminModal = closeModal;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', bootAdmin);

@@ -255,6 +255,61 @@ body.admin-requires-auth #adminLayout { display: none !important; }
 .preview-card-body { padding: .75rem 1rem; }
 .preview-card-body h5 { font-size: .95rem; margin-bottom: .25rem; }
 .vehicle-thumb { width: 48px; height: 36px; object-fit: cover; border-radius: 4px; vertical-align: middle; margin-right: .5rem; }
+
+.site-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+.site-media-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.site-media-preview {
+  height: 140px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border-light);
+}
+.site-media-preview img {
+  max-width: 100%;
+  max-height: 130px;
+  object-fit: contain;
+}
+.site-media-placeholder {
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.site-media-body { padding: 1rem; }
+.site-media-body h3 { font-size: .95rem; margin-bottom: .35rem; }
+.site-media-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .75rem;
+  align-items: center;
+}
+.site-media-actions .site-asset-url-input {
+  flex: 1;
+  min-width: 140px;
+  padding: .45rem .6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: .8rem;
+}
+.site-media-error {
+  padding: 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: var(--danger);
+  font-size: .88rem;
+}
 .image-drop-zone {
   border: 2px dashed var(--border); border-radius: 10px; padding: .75rem;
   background: var(--bg); transition: var(--transition);
@@ -407,9 +462,11 @@ body.admin-requires-auth #adminLayout { display: none !important; }
 
 /* ── Modal ───────────────────────────── */
 
+body.admin-modal-open { overflow: hidden; }
+
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.45);
-  backdrop-filter: blur(3px); z-index: 200;
+  backdrop-filter: blur(3px); z-index: 10000;
   display: flex; align-items: flex-start; justify-content: center;
   padding: 3rem 1rem; opacity: 0; visibility: hidden; transition: var(--transition);
   overflow-y: auto; pointer-events: none;
@@ -478,7 +535,7 @@ body.admin-requires-auth #adminLayout { display: none !important; }
 
 .toast-container {
   position: fixed; bottom: 1.5rem; right: 1.5rem;
-  display: flex; flex-direction: column; gap: .5rem; z-index: 300;
+  display: flex; flex-direction: column; gap: .5rem; z-index: 10001;
 }
 .toast {
   background: var(--primary); color: #fff; padding: .75rem 1.25rem;
