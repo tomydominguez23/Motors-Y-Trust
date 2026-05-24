@@ -59,14 +59,16 @@ DROP POLICY IF EXISTS "Temporal: anon elimina imágenes" ON storage.objects;
 CREATE POLICY "Temporal: anon elimina imágenes"
   ON storage.objects FOR DELETE TO anon USING (bucket_id = 'vehicles');
 
--- Imágenes del sitio (logo, banners)
-CREATE TABLE IF NOT EXISTS site_settings (
+-- Imágenes del sitio (logo, banners) — o ejecuta solo sql/site_imagenes.sql
+CREATE TABLE IF NOT EXISTS public.site_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL DEFAULT '',
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO site_settings (key, value) VALUES
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO public.site_settings (key, value) VALUES
   ('logo_header', ''),
   ('logo_footer', ''),
   ('hero_banner', ''),
@@ -74,11 +76,11 @@ INSERT INTO site_settings (key, value) VALUES
   ('about_image', '')
 ON CONFLICT (key) DO NOTHING;
 
-DROP POLICY IF EXISTS "Temporal: anon site_settings" ON site_settings;
+DROP POLICY IF EXISTS "Temporal: anon site_settings" ON public.site_settings;
 CREATE POLICY "Temporal: anon site_settings"
-  ON site_settings FOR ALL TO anon USING (true) WITH CHECK (true);
+  ON public.site_settings FOR ALL TO anon USING (true) WITH CHECK (true);
 
-GRANT SELECT ON site_settings TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.site_settings TO anon;
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (

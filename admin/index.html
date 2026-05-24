@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=9">
+  <link rel="stylesheet" href="admin.css?v=10">
   <style>
     #adminLayout { display: flex !important; min-height: 100vh; }
     .pages-viewport { flex: 1; width: 100%; min-height: 50vh; }
@@ -96,7 +96,7 @@
 
       <div class="auth-warning-banner" id="authWarningBanner">
         <div id="supabaseStatus" class="supabase-status pending">Comprobando conexión con Supabase…</div>
-        <p class="banner-note">Para subir fotos: ejecuta <code>sql/setup_completo.sql</code> en Supabase (crea permisos y el bucket <strong>vehicles</strong> automáticamente).</p>
+        <p class="banner-note">Autos: <code>sql/setup_completo.sql</code> · Logo/banners: <code>sql/site_imagenes.sql</code> en Supabase SQL Editor.</p>
       </div>
 
       <div class="pages-viewport" id="pagesViewport">
@@ -484,6 +484,6 @@
       window.adminSwitchPage = switchPage;
     })();
   </script>
-  <script src="admin.js?v=9"></script>
+  <script src="admin.js?v=10"></script>
 </body>
 </html>
