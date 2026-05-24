@@ -400,14 +400,15 @@ body.admin-requires-auth #adminLayout { display: none !important; }
   backdrop-filter: blur(3px); z-index: 200;
   display: flex; align-items: flex-start; justify-content: center;
   padding: 3rem 1rem; opacity: 0; visibility: hidden; transition: var(--transition);
-  overflow-y: auto;
+  overflow-y: auto; pointer-events: none;
 }
-.modal-overlay.active { opacity: 1; visibility: visible; }
+.modal-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
 
 .admin-modal {
   background: var(--bg-white); border-radius: var(--radius-lg);
-  width: 100%; max-width: 640px; position: relative;
+  width: 100%; max-width: 720px; position: relative;
   transform: translateY(15px); transition: var(--transition);
+  max-height: calc(100vh - 4rem); overflow-y: auto;
 }
 .modal-overlay.active .admin-modal { transform: translateY(0); }
 

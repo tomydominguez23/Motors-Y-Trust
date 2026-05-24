@@ -120,15 +120,22 @@ async function updateSupabaseStatus() {
     return;
   }
 
-  const { error: storageError } = await supabase.storage.from(STORAGE_BUCKET).list('', { limit: 1 });
-  if (storageError) {
-    el.textContent = `BD conectada. Storage «${STORAGE_BUCKET}»: ${storageError.message}. Crea el bucket público en Supabase Storage.`;
+  storageBucketReady = await isStorageReady();
+  if (!storageBucketReady) {
+    el.innerHTML = 'Base de datos OK. <strong>Falta bucket «vehicles»</strong> en Supabase → Storage (público). Puedes guardar autos sin fotos o pegar URLs de imagen.';
     el.className = 'supabase-status warn';
     return;
   }
 
-  el.textContent = 'Supabase conectado (datos + storage de imágenes)';
+  el.textContent = 'Supabase conectado (datos + fotos)';
   el.className = 'supabase-status ok';
+}
+
+async function isStorageReady() {
+  if (storageBucketReady !== null) return storageBucketReady;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).list('', { limit: 1 });
+  storageBucketReady = !error;
+  return storageBucketReady;
 }
 
 function setAuthMode(requiresAuth) {
@@ -278,17 +285,26 @@ function navigateTo(page) {
   const pageEl = document.getElementById(pageMap[page].el);
   if (pageEl) pageEl.classList.add('active');
 
-  document.getElementById('pageTitle').textContent = pageMap[page].title;
+  const titleEl = document.getElementById('pageTitle');
+  if (titleEl) titleEl.textContent = pageMap[page].title;
   document.getElementById('sidebar')?.classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
+  loadPageData(page);
+}
+
+async function loadPageData(page) {
+  const info = pageMap[page];
+  if (!info?.load) return;
   try {
-    pageMap[page].load();
+    await info.load();
   } catch (err) {
     console.error(err);
-    showToast('Error cargando sección: ' + err.message, 'error');
+    showToast('Error en ' + info.title + ': ' + err.message, 'error');
   }
 }
+
+window.navigateTo = navigateTo;
 
 /* ── Dashboard ───────────────────────── */
 
@@ -383,6 +399,7 @@ function renderChart(data) {
 
 const STORAGE_BUCKET = 'vehicles';
 let vehicleImageQueue = [];
+let storageBucketReady = null;
 
 function resetVehicleImages(urls = []) {
   vehicleImageQueue = (urls || []).map(url => ({ type: 'url', url }));
@@ -404,19 +421,46 @@ function initVehicleImageManager(urls = []) {
 function bindVehicleImageControls() {
   const input = document.getElementById('vf_images_input');
   const addBtn = document.getElementById('btnAddImages');
-  if (!input || !addBtn) return;
+  const urlInput = document.getElementById('vf_image_url');
+  const addUrlBtn = document.getElementById('btnAddImageUrl');
+  const list = document.getElementById('vehicleImageList');
 
-  addBtn.onclick = () => input.click();
-  input.onchange = () => {
-    Array.from(input.files || []).forEach(file => {
-      if (!file.type.startsWith('image/')) return;
-      const previewUrl = URL.createObjectURL(file);
-      vehicleImageQueue.push({ type: 'file', file, previewUrl });
-    });
-    input.value = '';
-    renderVehicleImageList();
-    updateVehicleLivePreview();
-  };
+  if (addBtn && input) {
+    addBtn.onclick = () => input.click();
+    input.onchange = () => {
+      Array.from(input.files || []).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const previewUrl = URL.createObjectURL(file);
+        vehicleImageQueue.push({ type: 'file', file, previewUrl });
+      });
+      input.value = '';
+      renderVehicleImageList();
+      updateVehicleLivePreview();
+    };
+  }
+
+  if (addUrlBtn && urlInput) {
+    addUrlBtn.onclick = () => {
+      const url = urlInput.value.trim();
+      if (!url) return;
+      vehicleImageQueue.push({ type: 'url', url });
+      urlInput.value = '';
+      renderVehicleImageList();
+      updateVehicleLivePreview();
+    };
+  }
+
+  if (list) {
+    list.onclick = (e) => {
+      const btn = e.target.closest('button[data-img-action]');
+      if (!btn) return;
+      const index = parseInt(btn.dataset.index, 10);
+      const action = btn.dataset.imgAction;
+      if (action === 'up') moveVehicleImage(index, -1);
+      if (action === 'down') moveVehicleImage(index, 1);
+      if (action === 'remove') removeVehicleImage(index);
+    };
+  }
 }
 
 function renderVehicleImageList() {
@@ -429,23 +473,23 @@ function renderVehicleImageList() {
   }
 
   list.innerHTML = vehicleImageQueue.map((item, index) => {
-    const src = item.previewUrl || item.url;
+    const src = (item.previewUrl || item.url || '').replace(/"/g, '&quot;');
     const isCover = index === 0;
     return `
-      <div class="image-manager-item ${isCover ? 'is-cover' : ''}" data-index="${index}">
+      <div class="image-manager-item ${isCover ? 'is-cover' : ''}">
         ${isCover ? '<span class="image-cover-badge">Portada</span>' : ''}
         <img src="${src}" alt="Imagen ${index + 1}">
         <div class="image-manager-actions">
-          <button type="button" title="Subir" onclick="moveVehicleImage(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
-          <button type="button" title="Bajar" onclick="moveVehicleImage(${index}, 1)" ${index === vehicleImageQueue.length - 1 ? 'disabled' : ''}>↓</button>
-          <button type="button" title="Eliminar" onclick="removeVehicleImage(${index})" style="color:var(--danger);">✕</button>
+          <button type="button" data-img-action="up" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" data-img-action="down" data-index="${index}" ${index === vehicleImageQueue.length - 1 ? 'disabled' : ''}>↓</button>
+          <button type="button" data-img-action="remove" data-index="${index}" style="color:var(--danger);">✕</button>
         </div>
       </div>
     `;
   }).join('');
 }
 
-window.moveVehicleImage = function(index, direction) {
+function moveVehicleImage(index, direction) {
   const next = index + direction;
   if (next < 0 || next >= vehicleImageQueue.length) return;
   const copy = [...vehicleImageQueue];
@@ -455,7 +499,7 @@ window.moveVehicleImage = function(index, direction) {
   updateVehicleLivePreview();
 };
 
-window.removeVehicleImage = function(index) {
+function removeVehicleImage(index) {
   const item = vehicleImageQueue[index];
   if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl);
   vehicleImageQueue.splice(index, 1);
@@ -491,12 +535,19 @@ function updateVehicleLivePreview() {
 
 async function uploadVehicleImages(vehicleId) {
   const urls = [];
+  let pendingFiles = 0;
+  const canUpload = await isStorageReady();
+
   for (const item of vehicleImageQueue) {
     if (item.type === 'url' && item.url) {
       urls.push(item.url);
       continue;
     }
     if (item.type === 'file' && item.file) {
+      if (!canUpload) {
+        pendingFiles += 1;
+        continue;
+      }
       const safeName = item.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `${vehicleId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
       const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, item.file, {
@@ -508,6 +559,11 @@ async function uploadVehicleImages(vehicleId) {
       urls.push(data.publicUrl);
     }
   }
+
+  if (pendingFiles > 0) {
+    showToast(`${pendingFiles} foto(s) no subidas: crea el bucket «vehicles» en Supabase Storage`, 'error');
+  }
+
   return urls;
 }
 
@@ -516,13 +572,16 @@ async function uploadVehicleImages(vehicleId) {
 async function loadVehicles() {
   let query = supabase.from('vehicles').select('*').order('created_at', { ascending: false });
 
-  const statusFilter = document.getElementById('vehicleStatusFilter').value;
+  const statusFilter = document.getElementById('vehicleStatusFilter')?.value;
   if (statusFilter) query = query.eq('status', statusFilter);
 
-  const search = document.getElementById('vehicleSearch').value.trim().toLowerCase();
+  const search = document.getElementById('vehicleSearch')?.value.trim().toLowerCase() || '';
 
   const { data, error } = await query;
-  if (error) { showToast('Error cargando vehículos', 'error'); return; }
+  if (error) {
+    showToast('Error cargando vehículos: ' + error.message, 'error');
+    return;
+  }
 
   let filtered = data || [];
   if (search) {
@@ -663,10 +722,14 @@ function vehicleFormHTML(v = {}) {
       </div>
       <div class="form-group image-manager-section">
         <label>Imágenes del vehículo</label>
-        <p class="text-muted" style="font-size:.8rem;margin-bottom:.5rem;">La primera imagen es la portada en la web. Usa ↑ ↓ para reordenar.</p>
+        <p class="text-muted" style="font-size:.8rem;margin-bottom:.5rem;">La primera imagen es la portada. Sin bucket Storage puedes pegar URLs de imagen.</p>
         <div id="vehicleImageList" class="image-manager-list"></div>
         <input type="file" id="vf_images_input" accept="image/jpeg,image/png,image/webp" multiple hidden>
-        <button type="button" class="btn btn-outline btn-sm" id="btnAddImages">+ Agregar imágenes</button>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnAddImages">+ Subir fotos</button>
+          <input type="url" id="vf_image_url" placeholder="https://ejemplo.com/foto.jpg" style="flex:1;min-width:180px;padding:.45rem .6rem;border:1px solid var(--border);border-radius:8px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnAddImageUrl">Pegar URL</button>
+        </div>
         <div id="vehicleLivePreview" class="vehicle-live-preview"></div>
       </div>
       <div class="form-row-3">
@@ -712,6 +775,12 @@ function openVehicleModal(vehicle = {}) {
 
 async function saveVehicle(e) {
   e.preventDefault();
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Guardando...';
+  }
+
   const existingId = document.getElementById('vf_id').value;
   const payload = {
     brand: document.getElementById('vf_brand').value,
@@ -759,7 +828,13 @@ async function saveVehicle(e) {
     closeModal();
     loadVehicles();
   } catch (err) {
+    console.error(err);
     showToast(err.message || 'Error guardando vehículo', 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = existingId ? 'Guardar Cambios' : 'Publicar Vehículo';
+    }
   }
 }
 
@@ -1317,6 +1392,9 @@ function initBindings() {
 function bootAdmin() {
   try {
     initBindings();
+    window.addEventListener('admin:page', (e) => {
+      if (e.detail?.page) loadPageData(e.detail.page);
+    });
     if (REQUIRE_AUTH) {
       supabase.auth.onAuthStateChange((_event, session) => {
         if (session) initAdminPanel();
