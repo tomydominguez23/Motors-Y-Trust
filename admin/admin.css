@@ -177,6 +177,23 @@ table { border-collapse: collapse; width: 100%; }
 .topbar-toggle { display: none; }
 .topbar-actions { display: flex; gap: .5rem; }
 
+.auth-warning-banner {
+  margin: 0 1.5rem 1rem;
+  padding: .65rem 1rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+.auth-warning-banner code {
+  font-size: .78rem;
+  background: rgba(0,0,0,.06);
+  padding: .1rem .35rem;
+  border-radius: 4px;
+}
+
 /* ── Pages ───────────────────────────── */
 
 .page { display: none; padding: 1.5rem; }

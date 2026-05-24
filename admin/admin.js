@@ -5,6 +5,9 @@
    con los valores de tu proyecto en Supabase.
    ======================================== */
 
+/** Cambiar a true cuando quieras volver a exigir login */
+const REQUIRE_AUTH = false;
+
 const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 
@@ -90,16 +93,28 @@ document.getElementById('adminModal').addEventListener('click', e => {
 
 /* ── Auth ────────────────────────────── */
 
+function initAdminPanel() {
+  showAdmin();
+  loadDashboard();
+}
+
 async function checkSession() {
+  if (!REQUIRE_AUTH) {
+    initAdminPanel();
+    return;
+  }
+
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    showAdmin();
-    loadDashboard();
+    initAdminPanel();
   } else {
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('adminLayout').style.display = 'none';
   }
 }
+
+function setupAuth() {
+  if (!REQUIRE_AUTH) return;
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -132,8 +147,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     return;
   }
 
-  showAdmin();
-  loadDashboard();
+  initAdminPanel();
 });
 
 document.getElementById('btnResetPassword').addEventListener('click', async () => {
@@ -187,9 +201,15 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
   document.getElementById('adminLayout').style.display = 'none';
 });
 
+} // setupAuth
+
 function showAdmin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminLayout').style.display = 'flex';
+  const banner = document.getElementById('authWarningBanner');
+  if (banner) banner.style.display = REQUIRE_AUTH ? 'none' : 'block';
+  const logoutBtn = document.getElementById('btnLogout');
+  if (logoutBtn) logoutBtn.style.display = REQUIRE_AUTH ? '' : 'none';
 }
 
 /* ── Navigation ──────────────────────── */
@@ -1062,11 +1082,13 @@ function debounce(fn, ms) {
 
 /* ── Init ────────────────────────────── */
 
-supabase.auth.onAuthStateChange((_event, session) => {
-  if (session) {
-    showAdmin();
-    loadDashboard();
-  }
-});
-
-checkSession();
+if (REQUIRE_AUTH) {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) initAdminPanel();
+  });
+  setupAuth();
+  checkSession();
+} else {
+  setupAuth();
+  initAdminPanel();
+}
