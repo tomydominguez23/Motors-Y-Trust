@@ -98,18 +98,24 @@ function initAdminPanel() {
   loadDashboard();
 }
 
+function setAuthMode(requiresAuth) {
+  document.body.classList.toggle('admin-no-auth', !requiresAuth);
+  document.body.classList.toggle('admin-requires-auth', requiresAuth);
+  const loginEl = document.getElementById('loginScreen');
+  if (loginEl) loginEl.hidden = !requiresAuth;
+}
+
 async function checkSession() {
   if (!REQUIRE_AUTH) {
+    setAuthMode(false);
     initAdminPanel();
     return;
   }
 
+  setAuthMode(true);
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
     initAdminPanel();
-  } else {
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('adminLayout').style.display = 'none';
   }
 }
 
@@ -197,14 +203,17 @@ document.getElementById('btnMagicLink').addEventListener('click', async () => {
 
 document.getElementById('btnLogout').addEventListener('click', async () => {
   await supabase.auth.signOut();
-  document.getElementById('loginScreen').style.display = 'flex';
+  setAuthMode(true);
+  const loginEl = document.getElementById('loginScreen');
+  if (loginEl) loginEl.hidden = false;
   document.getElementById('adminLayout').style.display = 'none';
 });
 
 } // setupAuth
 
 function showAdmin() {
-  document.getElementById('loginScreen').style.display = 'none';
+  const loginEl = document.getElementById('loginScreen');
+  if (loginEl) loginEl.hidden = true;
   document.getElementById('adminLayout').style.display = 'flex';
   const banner = document.getElementById('authWarningBanner');
   if (banner) banner.style.display = REQUIRE_AUTH ? 'none' : 'block';
@@ -1089,6 +1098,7 @@ if (REQUIRE_AUTH) {
   setupAuth();
   checkSession();
 } else {
+  setAuthMode(false);
   setupAuth();
   initAdminPanel();
 }
