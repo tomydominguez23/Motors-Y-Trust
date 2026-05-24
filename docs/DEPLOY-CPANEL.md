@@ -30,11 +30,13 @@ Crea estos secrets (nombres exactos):
 
 | Secret | Valor |
 |--------|--------|
-| `CPANEL_FTP_HOST` | Host FTP, ej. `ftp.trustmotors.cl` |
-| `CPANEL_FTP_USERNAME` | Usuario FTP completo |
-| `CPANEL_FTP_PASSWORD` | Contraseña FTP |
-| `CPANEL_FTP_PORT` | `21` (opcional; si no existe, usa 21) |
+| `CPANEL_FTP_HOST` | Host FTP, ej. `ftp.ditecno.cl` |
+| `CPANEL_FTP_USERNAME` | Usuario FTP completo, ej. `Admin@trustmotors.cl` |
+| `CPANEL_FTP_PASSWORD` | Contraseña FTP (solo en secret, nunca en el repo) |
+| `CPANEL_FTP_PORT` | `21` para FTPS explícito (opcional; si no existe, usa 21) |
 | `CPANEL_REMOTE_DIR` | Ruta remota, ej. `/public_html/` (con `/` al final) |
+
+**Trust Motors (Ditecno):** host `ftp.ditecno.cl`, usuario `Admin@trustmotors.cl`, puerto `21`, protocolo **FTPS explícito** (ya configurado en el workflow). La contraseña va únicamente en el secret `CPANEL_FTP_PASSWORD`.
 
 ### 3. Activar el workflow
 
@@ -60,7 +62,8 @@ Si todo está bien, verás ✅ **Deploy to cPanel (FTP)** en verde.
 | Login incorrecto | Revisa usuario/contraseña FTP; en cPanel crea una cuenta FTP solo para deploy |
 | Ruta incorrecta | `CPANEL_REMOTE_DIR` debe ser la carpeta del dominio, con barras `/` |
 | Firewall | Algunos hostings exigen **IP fija** de GitHub Actions; en ese caso usa la **Opción B** (Git en cPanel) |
-| FTPS requerido | Cambia en el workflow `protocol: ftps` y puerto `990` si tu hosting lo pide |
+| FTPS requerido | El workflow usa `protocol: ftps` y puerto `21` (explícito). Si falla, prueba `ftp` sin cifrado o puerto `990` con `ftps-legacy` |
+| Certificado TLS | Si el hosting usa certificado autofirmado, el workflow usa `security: loose` |
 
 ---
 
