@@ -1,21 +1,37 @@
 /* ========================================
    Trust Motors - Application Logic
+   ========================================
+   CONFIGURACIÓN: Reemplaza SUPABASE_URL y SUPABASE_ANON_KEY
+   con los valores de tu proyecto en Supabase.
+   Si se dejan vacíos, se usarán datos de ejemplo locales.
    ======================================== */
 
+const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 const WHATSAPP_NUMBER = '56900000000';
+
+let supabaseClient = null;
+const USE_SUPABASE = SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY';
+
+if (USE_SUPABASE && window.supabase) {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+/* ── SVG Generators ──────────────────── */
 
 function generateCarSVG(color1, color2, windowColor) {
   const c1 = color1 || '#1a1a2e';
   const c2 = color2 || '#16213e';
   const wc = windowColor || '#a8d8ea';
+  const uid = c1.replace('#','');
   return `<svg class="car-svg-thumb" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="cb_${c1.replace('#','')}" x1="0%" y1="0%" x2="0%" y2="100%">
+      <linearGradient id="cb_${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" style="stop-color:${c1};stop-opacity:1"/>
         <stop offset="100%" style="stop-color:${c2};stop-opacity:1"/>
       </linearGradient>
     </defs>
-    <path d="M160,260 Q160,220 200,200 L280,160 Q300,140 340,130 L500,120 Q540,120 560,140 L620,200 Q660,220 680,230 L700,240 Q720,250 720,270 L720,290 Q720,300 710,300 L130,300 Q120,300 120,290 L120,280 Q120,260 160,260 Z" fill="url(#cb_${c1.replace('#','')})"/>
+    <path d="M160,260 Q160,220 200,200 L280,160 Q300,140 340,130 L500,120 Q540,120 560,140 L620,200 Q660,220 680,230 L700,240 Q720,250 720,270 L720,290 Q720,300 710,300 L130,300 Q120,300 120,290 L120,280 Q120,260 160,260 Z" fill="url(#cb_${uid})"/>
     <path d="M295,195 L330,150 Q340,138 360,135 L480,128 Q500,128 510,140 L540,195 Z" fill="${wc}" opacity="0.8"/>
     <line x1="420" y1="130" x2="415" y2="195" stroke="${c1}" stroke-width="3"/>
     <ellipse cx="690" cy="250" rx="18" ry="10" fill="#ffd700" opacity="0.9"/>
@@ -42,14 +58,15 @@ function generateSUVSVG(color1, color2, windowColor) {
   const c1 = color1 || '#2d3436';
   const c2 = color2 || '#1e272e';
   const wc = windowColor || '#a8d8ea';
+  const uid = c1.replace('#','');
   return `<svg class="car-svg-thumb" viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="sb_${c1.replace('#','')}" x1="0%" y1="0%" x2="0%" y2="100%">
+      <linearGradient id="sb_${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" style="stop-color:${c1};stop-opacity:1"/>
         <stop offset="100%" style="stop-color:${c2};stop-opacity:1"/>
       </linearGradient>
     </defs>
-    <path d="M140,270 Q140,240 170,220 L250,160 Q260,145 290,130 L500,115 Q540,115 570,135 L640,200 Q670,220 700,240 L720,255 Q740,265 740,285 L740,310 Q740,320 730,320 L110,320 Q100,320 100,310 L100,290 Q100,270 140,270 Z" fill="url(#sb_${c1.replace('#','')})"/>
+    <path d="M140,270 Q140,240 170,220 L250,160 Q260,145 290,130 L500,115 Q540,115 570,135 L640,200 Q670,220 700,240 L720,255 Q740,265 740,285 L740,310 Q740,320 730,320 L110,320 Q100,320 100,310 L100,290 Q100,270 140,270 Z" fill="url(#sb_${uid})"/>
     <path d="M270,210 L300,148 Q310,132 340,128 L480,120 Q505,120 520,138 L560,210 Z" fill="${wc}" opacity="0.8"/>
     <line x1="415" y1="122" x2="410" y2="210" stroke="${c1}" stroke-width="3"/>
     <ellipse cx="710" cy="260" rx="20" ry="12" fill="#ffd700" opacity="0.9"/>
@@ -66,16 +83,17 @@ function generatePickupSVG(color1, color2, windowColor) {
   const c1 = color1 || '#4a4a4a';
   const c2 = color2 || '#333333';
   const wc = windowColor || '#a8d8ea';
+  const uid = c1.replace('#','');
   return `<svg class="car-svg-thumb" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="pb_${c1.replace('#','')}" x1="0%" y1="0%" x2="0%" y2="100%">
+      <linearGradient id="pb_${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" style="stop-color:${c1};stop-opacity:1"/>
         <stop offset="100%" style="stop-color:${c2};stop-opacity:1"/>
       </linearGradient>
     </defs>
     <rect x="420" y="200" width="280" height="90" rx="6" fill="${c2}" opacity="0.7"/>
-    <path d="M150,260 Q150,230 190,210 L260,165 Q275,145 310,135 L420,130 L420,295 L120,295 Q110,295 110,285 L110,275 Q110,260 150,260 Z" fill="url(#pb_${c1.replace('#','')})"/>
-    <rect x="420" y="210" width="270" height="85" rx="4" fill="url(#pb_${c1.replace('#','')})"/>
+    <path d="M150,260 Q150,230 190,210 L260,165 Q275,145 310,135 L420,130 L420,295 L120,295 Q110,295 110,285 L110,275 Q110,260 150,260 Z" fill="url(#pb_${uid})"/>
+    <rect x="420" y="210" width="270" height="85" rx="4" fill="url(#pb_${uid})"/>
     <path d="M275,200 L300,150 Q310,138 330,135 L400,130 L400,200 Z" fill="${wc}" opacity="0.8"/>
     <ellipse cx="700" cy="255" rx="18" ry="10" fill="#ffd700" opacity="0.9"/>
     <ellipse cx="140" cy="265" rx="16" ry="9" fill="#ff4444" opacity="0.8"/>
@@ -87,106 +105,74 @@ function generatePickupSVG(color1, color2, windowColor) {
 }
 
 function getCarSVG(vehicle) {
+  const c1 = vehicle.color1 || vehicle.color_1;
+  const c2 = vehicle.color2 || vehicle.color_2;
+  const wc = vehicle.windowColor || vehicle.window_color;
   const type = vehicle.type;
-  if (type === 'SUV') return generateSUVSVG(vehicle.color1, vehicle.color2, vehicle.windowColor);
-  if (type === 'Pickup') return generatePickupSVG(vehicle.color1, vehicle.color2, vehicle.windowColor);
-  return generateCarSVG(vehicle.color1, vehicle.color2, vehicle.windowColor);
+  if (type === 'SUV') return generateSUVSVG(c1, c2, wc);
+  if (type === 'Pickup') return generatePickupSVG(c1, c2, wc);
+  return generateCarSVG(c1, c2, wc);
 }
 
-const vehicles = [
-  {
-    id: 1, brand: 'Toyota', model: 'Corolla Cross', year: 2024, type: 'SUV',
-    price: 18990000, km: 12000, fuel: 'Bencina', transmission: 'Automática',
-    badge: 'featured', badgeText: 'Destacado',
-    color1: '#2d3436', color2: '#1e272e', windowColor: '#a8d8ea',
-    desc: 'SUV híbrido con bajo kilometraje, mantenciones al día en servicio oficial. Único dueño, como nuevo.'
-  },
-  {
-    id: 2, brand: 'Hyundai', model: 'Tucson', year: 2023, type: 'SUV',
-    price: 16490000, km: 28000, fuel: 'Bencina', transmission: 'Automática',
-    badge: 'new', badgeText: 'Nuevo ingreso',
-    color1: '#1a3c6e', color2: '#0d2b4e', windowColor: '#b8d4e8',
-    desc: 'Versión Limited full equipo. Techo panorámico, asientos de cuero calefactados, cámara 360°.'
-  },
-  {
-    id: 3, brand: 'Kia', model: 'Sportage', year: 2023, type: 'SUV',
-    price: 15990000, km: 35000, fuel: 'Bencina', transmission: 'Automática',
-    badge: '', badgeText: '',
-    color1: '#6b1d1d', color2: '#4a1212', windowColor: '#c8dde8',
-    desc: 'Motor 1.6 turbo, pantalla doble, asistente de conducción nivel 2. Excelente estado mecánico.'
-  },
-  {
-    id: 4, brand: 'Toyota', model: 'Yaris', year: 2022, type: 'Sedán',
-    price: 9990000, km: 42000, fuel: 'Bencina', transmission: 'Manual',
-    badge: 'offer', badgeText: 'Oferta',
-    color1: '#c0c0c0', color2: '#999999', windowColor: '#d0e8f0',
-    desc: 'Económico y confiable. Ideal para ciudad. Mantenciones al día, historial limpio.'
-  },
-  {
-    id: 5, brand: 'Chevrolet', model: 'Onix', year: 2023, type: 'Sedán',
-    price: 10490000, km: 18000, fuel: 'Bencina', transmission: 'Automática',
-    badge: 'new', badgeText: 'Nuevo ingreso',
-    color1: '#1a1a1a', color2: '#0a0a0a', windowColor: '#b0c8d8',
-    desc: 'Versión Premier turbo con pantalla central, Apple CarPlay y Android Auto. Poco uso.'
-  },
-  {
-    id: 6, brand: 'Nissan', model: 'Kicks', year: 2024, type: 'SUV',
-    price: 14990000, km: 8000, fuel: 'Bencina', transmission: 'CVT',
-    badge: 'featured', badgeText: 'Destacado',
-    color1: '#e67e22', color2: '#c0651a', windowColor: '#c8dde8',
-    desc: 'Prácticamente nuevo. Versión Exclusive con techo bitono, sensores y cámara de retroceso.'
-  },
-  {
-    id: 7, brand: 'Mazda', model: 'CX-5', year: 2022, type: 'SUV',
-    price: 17490000, km: 48000, fuel: 'Bencina', transmission: 'Automática',
-    badge: '', badgeText: '',
-    color1: '#8e1b1b', color2: '#6e1010', windowColor: '#c0d6e4',
-    desc: 'Soul Red Crystal. Motor Skyactiv-G 2.0L, sistema i-Activsense completo. Impecable.'
-  },
-  {
-    id: 8, brand: 'Suzuki', model: 'Swift', year: 2023, type: 'Hatchback',
-    price: 8990000, km: 22000, fuel: 'Bencina', transmission: 'Manual',
-    badge: 'offer', badgeText: 'Oferta',
-    color1: '#2980b9', color2: '#1a5276', windowColor: '#d0e8f5',
-    desc: 'Compacto, eficiente y divertido de manejar. Perfecto para movilidad urbana con bajo consumo.'
-  },
-  {
-    id: 9, brand: 'Hyundai', model: 'Accent', year: 2022, type: 'Sedán',
-    price: 9490000, km: 55000, fuel: 'Bencina', transmission: 'Automática',
-    badge: '', badgeText: '',
-    color1: '#4a4a4a', color2: '#2d2d2d', windowColor: '#b8d0e0',
-    desc: 'Sedán amplio y confortable. Bluetooth, aire acondicionado, dirección asistida. Buen estado general.'
-  },
-  {
-    id: 10, brand: 'Toyota', model: 'Hilux', year: 2023, type: 'Pickup',
-    price: 22990000, km: 30000, fuel: 'Diésel', transmission: 'Automática',
-    badge: 'featured', badgeText: 'Destacado',
-    color1: '#f0f0f0', color2: '#cccccc', windowColor: '#c0d8e8',
-    desc: 'SRV 4x4, motor 2.8 diésel. Ideal para trabajo y aventura. Barra antivuelco y estribos laterales.'
-  },
-  {
-    id: 11, brand: 'Kia', model: 'Rio', year: 2021, type: 'Hatchback',
-    price: 8490000, km: 60000, fuel: 'Bencina', transmission: 'Manual',
-    badge: '', badgeText: '',
-    color1: '#27ae60', color2: '#1e8449', windowColor: '#c8e0ea',
-    desc: 'Económico y práctico. Motor 1.4L, aire acondicionado, radio bluetooth. Documentación al día.'
-  },
-  {
-    id: 12, brand: 'BMW', model: '320i', year: 2022, type: 'Sedán',
-    price: 24990000, km: 38000, fuel: 'Bencina', transmission: 'Automática',
-    badge: 'featured', badgeText: 'Destacado',
-    color1: '#0a0a0a', color2: '#1a1a1a', windowColor: '#a0c0d8',
-    desc: 'Serie 3 Sport Line. Motor 2.0 turbo 184HP, pantalla BMW Live Cockpit, Head-up Display.'
-  }
+/* ── Fallback Data ───────────────────── */
+
+const fallbackVehicles = [
+  { id: '1', brand: 'Toyota', model: 'Corolla Cross', year: 2024, type: 'SUV', price: 18990000, km: 12000, fuel: 'Bencina', transmission: 'Automática', is_featured: true, color1: '#2d3436', color2: '#1e272e', window_color: '#a8d8ea', description: 'SUV híbrido con bajo kilometraje, mantenciones al día en servicio oficial. Único dueño.' },
+  { id: '2', brand: 'Hyundai', model: 'Tucson', year: 2023, type: 'SUV', price: 16490000, km: 28000, fuel: 'Bencina', transmission: 'Automática', is_featured: false, color1: '#1a3c6e', color2: '#0d2b4e', window_color: '#b8d4e8', description: 'Versión Limited full equipo. Techo panorámico, asientos de cuero calefactados.' },
+  { id: '3', brand: 'Kia', model: 'Sportage', year: 2023, type: 'SUV', price: 15990000, km: 35000, fuel: 'Bencina', transmission: 'Automática', is_featured: false, color1: '#6b1d1d', color2: '#4a1212', window_color: '#c8dde8', description: 'Motor 1.6 turbo, pantalla doble, asistente de conducción nivel 2.' },
+  { id: '4', brand: 'Toyota', model: 'Yaris', year: 2022, type: 'Sedán', price: 9990000, km: 42000, fuel: 'Bencina', transmission: 'Manual', is_featured: false, color1: '#c0c0c0', color2: '#999999', window_color: '#d0e8f0', description: 'Económico y confiable. Ideal para ciudad.' },
+  { id: '5', brand: 'Chevrolet', model: 'Onix', year: 2023, type: 'Sedán', price: 10490000, km: 18000, fuel: 'Bencina', transmission: 'Automática', is_featured: false, color1: '#1a1a1a', color2: '#0a0a0a', window_color: '#b0c8d8', description: 'Versión Premier turbo con Apple CarPlay y Android Auto.' },
+  { id: '6', brand: 'Nissan', model: 'Kicks', year: 2024, type: 'SUV', price: 14990000, km: 8000, fuel: 'Bencina', transmission: 'CVT', is_featured: true, color1: '#e67e22', color2: '#c0651a', window_color: '#c8dde8', description: 'Prácticamente nuevo. Versión Exclusive con techo bitono.' },
+  { id: '7', brand: 'Mazda', model: 'CX-5', year: 2022, type: 'SUV', price: 17490000, km: 48000, fuel: 'Bencina', transmission: 'Automática', is_featured: false, color1: '#8e1b1b', color2: '#6e1010', window_color: '#c0d6e4', description: 'Soul Red Crystal. Motor Skyactiv-G 2.0L. Impecable.' },
+  { id: '8', brand: 'Suzuki', model: 'Swift', year: 2023, type: 'Hatchback', price: 8990000, km: 22000, fuel: 'Bencina', transmission: 'Manual', is_featured: false, color1: '#2980b9', color2: '#1a5276', window_color: '#d0e8f5', description: 'Compacto, eficiente y divertido de manejar.' },
+  { id: '9', brand: 'Hyundai', model: 'Accent', year: 2022, type: 'Sedán', price: 9490000, km: 55000, fuel: 'Bencina', transmission: 'Automática', is_featured: false, color1: '#4a4a4a', color2: '#2d2d2d', window_color: '#b8d0e0', description: 'Sedán amplio y confortable. Buen estado general.' },
+  { id: '10', brand: 'Toyota', model: 'Hilux', year: 2023, type: 'Pickup', price: 22990000, km: 30000, fuel: 'Diésel', transmission: 'Automática', is_featured: true, color1: '#f0f0f0', color2: '#cccccc', window_color: '#c0d8e8', description: 'SRV 4x4, motor 2.8 diésel. Ideal para trabajo y aventura.' },
+  { id: '11', brand: 'Kia', model: 'Rio', year: 2021, type: 'Hatchback', price: 8490000, km: 60000, fuel: 'Bencina', transmission: 'Manual', is_featured: false, color1: '#27ae60', color2: '#1e8449', window_color: '#c8e0ea', description: 'Económico y práctico. Motor 1.4L. Documentación al día.' },
+  { id: '12', brand: 'BMW', model: '320i', year: 2022, type: 'Sedán', price: 24990000, km: 38000, fuel: 'Bencina', transmission: 'Automática', is_featured: true, color1: '#0a0a0a', color2: '#1a1a1a', window_color: '#a0c0d8', description: 'Serie 3 Sport Line. Motor 2.0 turbo 184HP, Head-up Display.' },
 ];
 
+/* ── Data Layer ──────────────────────── */
+
+let allVehicles = [];
+
+async function fetchVehicles() {
+  if (USE_SUPABASE && supabaseClient) {
+    const { data, error } = await supabaseClient
+      .from('vehicles')
+      .select('*')
+      .eq('status', 'disponible')
+      .order('is_featured', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      allVehicles = data;
+      return;
+    }
+  }
+  allVehicles = fallbackVehicles;
+}
+
+async function submitInquiry(vehicleId, name, phone, email, message) {
+  if (USE_SUPABASE && supabaseClient) {
+    const payload = { name, phone, email, message };
+    if (vehicleId) payload.vehicle_id = vehicleId;
+    const { error } = await supabaseClient.from('inquiries').insert(payload);
+    return !error;
+  }
+  return true;
+}
+
+/* ── Formatting ──────────────────────── */
+
 function formatPrice(price) {
-  return '$' + price.toLocaleString('es-CL');
+  return '$' + Number(price).toLocaleString('es-CL');
 }
 
 function formatKm(km) {
-  return km.toLocaleString('es-CL') + ' km';
+  return Number(km).toLocaleString('es-CL') + ' km';
 }
+
+/* ── Vehicle Card ────────────────────── */
 
 function createVehicleCard(vehicle) {
   const card = document.createElement('div');
@@ -197,9 +183,10 @@ function createVehicleCard(vehicle) {
   card.dataset.price = vehicle.price;
   card.dataset.year = vehicle.year;
 
-  const badgeHTML = vehicle.badge
-    ? `<span class="vehicle-badge ${vehicle.badge}">${vehicle.badgeText}</span>`
-    : '';
+  let badgeHTML = '';
+  if (vehicle.is_featured) {
+    badgeHTML = '<span class="vehicle-badge featured">Destacado</span>';
+  }
 
   card.innerHTML = `
     <div class="vehicle-card-image">
@@ -237,7 +224,7 @@ function createVehicleCard(vehicle) {
   return card;
 }
 
-/* ── Rendering ──────────────────────── */
+/* ── Filtering & Rendering ───────────── */
 
 let currentFilter = 'all';
 let currentBrand = '';
@@ -247,7 +234,7 @@ let currentMinYear = '';
 let visibleCount = 8;
 
 function getFilteredVehicles() {
-  return vehicles.filter(v => {
+  return allVehicles.filter(v => {
     if (currentFilter !== 'all' && v.type !== currentFilter) return false;
     if (currentBrand && v.brand !== currentBrand) return false;
     if (currentType && v.type !== currentType) return false;
@@ -310,7 +297,6 @@ document.getElementById('btnSearch').addEventListener('click', () => {
 
   visibleCount = 8;
   renderVehicles();
-
   document.getElementById('vehiculos').scrollIntoView({ behavior: 'smooth' });
 });
 
@@ -346,16 +332,14 @@ function openModal(vehicle) {
 
   document.getElementById('modalTitle').textContent = `${vehicle.brand} ${vehicle.model} ${vehicle.year}`;
   document.getElementById('modalPrice').textContent = formatPrice(vehicle.price);
-  document.getElementById('modalDesc').textContent = vehicle.desc;
+  document.getElementById('modalDesc').textContent = vehicle.description || '';
 
   const badge = document.getElementById('modalBadge');
-  if (vehicle.badge) {
-    badge.textContent = vehicle.badgeText;
-    badge.className = `modal-badge`;
+  if (vehicle.is_featured) {
+    badge.textContent = 'Destacado';
     badge.style.display = 'inline-block';
-    if (vehicle.badge === 'featured') { badge.style.background = '#fef3c7'; badge.style.color = '#b45309'; }
-    else if (vehicle.badge === 'offer') { badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
-    else { badge.style.background = '#dbeafe'; badge.style.color = '#1d4ed8'; }
+    badge.style.background = '#fef3c7';
+    badge.style.color = '#b45309';
   } else {
     badge.style.display = 'none';
   }
@@ -442,12 +426,14 @@ window.addEventListener('scroll', () => {
 
 /* ── Contact Form ───────────────────── */
 
-document.getElementById('contactForm').addEventListener('submit', (e) => {
+document.getElementById('contactForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const name = document.getElementById('name').value;
   const phone = document.getElementById('phone').value;
   const email = document.getElementById('email').value;
   const message = document.getElementById('message').value;
+
+  await submitInquiry(null, name, phone, email, message);
 
   const msg = encodeURIComponent(
     `Hola Trust Motors, soy ${name}.\n` +
@@ -460,6 +446,11 @@ document.getElementById('contactForm').addEventListener('submit', (e) => {
   e.target.reset();
 });
 
-/* ── Initial Render ─────────────────── */
+/* ── Init ────────────────────────────── */
 
-renderVehicles();
+async function init() {
+  await fetchVehicles();
+  renderVehicles();
+}
+
+init();
