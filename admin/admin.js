@@ -78,14 +78,27 @@ function showToast(msg, type = '') {
   setTimeout(() => toast.remove(), 3500);
 }
 
-function openModal(title, bodyHTML) {
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function openModal(title, bodyHTML, options = {}) {
   document.getElementById('adminModalTitle').textContent = title;
   document.getElementById('adminModalBody').innerHTML = bodyHTML;
+  const modalBox = document.querySelector('#adminModal .admin-modal');
+  modalBox?.classList.toggle('modal-wide', !!options.wide);
   document.getElementById('adminModal').classList.add('active');
 }
 
 function closeModal() {
   document.getElementById('adminModal').classList.remove('active');
+  document.querySelector('#adminModal .admin-modal')?.classList.remove('modal-wide');
   revokeVehiclePreviewUrls();
 }
 
@@ -405,8 +418,11 @@ function renderChart(data) {
 /* ── Vehicle images ──────────────────── */
 
 const STORAGE_BUCKET = 'vehicles';
+const MAX_IMAGE_WIDTH = 1920;
+const IMAGE_JPEG_QUALITY = 0.82;
 let vehicleImageQueue = [];
 let storageBucketReady = null;
+let imageDragIndex = null;
 
 function resetVehicleImages(urls = []) {
   vehicleImageQueue = (urls || []).map(url => ({ type: 'url', url }));
@@ -425,36 +441,69 @@ function initVehicleImageManager(urls = []) {
   bindVehicleImageControls();
 }
 
+function addVehicleImageUrl(urlInput) {
+  const url = urlInput.value.trim();
+  if (!url) return;
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+  } catch {
+    showToast('URL de imagen no válida', 'error');
+    return;
+  }
+  vehicleImageQueue.push({ type: 'url', url });
+  urlInput.value = '';
+  renderVehicleImageList();
+  updateVehicleLivePreview();
+}
+
+function addVehicleImageFiles(fileList) {
+  Array.from(fileList || []).forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const previewUrl = URL.createObjectURL(file);
+    vehicleImageQueue.push({ type: 'file', file, previewUrl });
+  });
+  renderVehicleImageList();
+  updateVehicleLivePreview();
+}
+
 function bindVehicleImageControls() {
   const input = document.getElementById('vf_images_input');
   const addBtn = document.getElementById('btnAddImages');
   const urlInput = document.getElementById('vf_image_url');
   const addUrlBtn = document.getElementById('btnAddImageUrl');
   const list = document.getElementById('vehicleImageList');
+  const dropZone = document.getElementById('vehicleImageDropZone');
 
   if (addBtn && input) {
     addBtn.onclick = () => input.click();
     input.onchange = () => {
-      Array.from(input.files || []).forEach(file => {
-        if (!file.type.startsWith('image/')) return;
-        const previewUrl = URL.createObjectURL(file);
-        vehicleImageQueue.push({ type: 'file', file, previewUrl });
-      });
+      addVehicleImageFiles(input.files);
       input.value = '';
-      renderVehicleImageList();
-      updateVehicleLivePreview();
     };
   }
 
   if (addUrlBtn && urlInput) {
-    addUrlBtn.onclick = () => {
-      const url = urlInput.value.trim();
-      if (!url) return;
-      vehicleImageQueue.push({ type: 'url', url });
-      urlInput.value = '';
-      renderVehicleImageList();
-      updateVehicleLivePreview();
+    addUrlBtn.onclick = () => addVehicleImageUrl(urlInput);
+    urlInput.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addVehicleImageUrl(urlInput);
+      }
     };
+  }
+
+  if (dropZone) {
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      addVehicleImageFiles(e.dataTransfer?.files);
+    });
   }
 
   if (list) {
@@ -470,6 +519,39 @@ function bindVehicleImageControls() {
   }
 }
 
+function bindVehicleImageDragReorder(list) {
+  list.querySelectorAll('.image-manager-item').forEach((el) => {
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart', (e) => {
+      imageDragIndex = parseInt(el.dataset.index, 10);
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      imageDragIndex = null;
+      list.querySelectorAll('.image-manager-item').forEach(item => item.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.classList.remove('drag-over');
+      const toIndex = parseInt(el.dataset.index, 10);
+      if (imageDragIndex == null || imageDragIndex === toIndex) return;
+      const copy = [...vehicleImageQueue];
+      const [moved] = copy.splice(imageDragIndex, 1);
+      copy.splice(toIndex, 0, moved);
+      vehicleImageQueue = copy;
+      renderVehicleImageList();
+      updateVehicleLivePreview();
+    });
+  });
+}
+
 function renderVehicleImageList() {
   const list = document.getElementById('vehicleImageList');
   if (!list) return;
@@ -480,10 +562,10 @@ function renderVehicleImageList() {
   }
 
   list.innerHTML = vehicleImageQueue.map((item, index) => {
-    const src = (item.previewUrl || item.url || '').replace(/"/g, '&quot;');
+    const src = escapeHtml(item.previewUrl || item.url || '');
     const isCover = index === 0;
     return `
-      <div class="image-manager-item ${isCover ? 'is-cover' : ''}">
+      <div class="image-manager-item ${isCover ? 'is-cover' : ''}" data-index="${index}" title="Arrastra para reordenar">
         ${isCover ? '<span class="image-cover-badge">Portada</span>' : ''}
         <img src="${src}" alt="Imagen ${index + 1}">
         <div class="image-manager-actions">
@@ -494,6 +576,7 @@ function renderVehicleImageList() {
       </div>
     `;
   }).join('');
+  bindVehicleImageDragReorder(list);
 }
 
 function moveVehicleImage(index, direction) {
@@ -525,19 +608,84 @@ function updateVehicleLivePreview() {
   const cover = vehicleImageQueue[0];
   const coverSrc = cover ? (cover.previewUrl || cover.url) : null;
 
+  const safeCover = coverSrc ? escapeHtml(coverSrc) : '';
   box.innerHTML = `
     <h4>Vista previa (así se verá en la web)</h4>
     <div class="preview-card">
-      ${coverSrc
-        ? `<img src="${coverSrc}" alt="Vista previa">`
+      ${safeCover
+        ? `<img src="${safeCover}" alt="Vista previa">`
         : '<div style="height:160px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:.85rem;">Sin foto</div>'}
       <div class="preview-card-body">
-        <h5>${brand} ${model}</h5>
-        <p class="text-muted" style="font-size:.82rem;">${year}</p>
+        <h5>${escapeHtml(brand)} ${escapeHtml(model)}</h5>
+        <p class="text-muted" style="font-size:.82rem;">${escapeHtml(year)}</p>
         ${price ? `<p style="font-weight:700;margin-top:.35rem;">${formatPrice(price)}</p>` : ''}
       </div>
     </div>
   `;
+}
+
+async function compressImageFile(file) {
+  if (!file?.type?.startsWith('image/') || file.size < 180000) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    const blobUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(blobUrl);
+      let { width, height } = img;
+      if (width <= MAX_IMAGE_WIDTH) {
+        resolve(file);
+        return;
+      }
+      const scale = MAX_IMAGE_WIDTH / width;
+      width = MAX_IMAGE_WIDTH;
+      height = Math.round(height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+          resolve(new File([blob], name, { type: 'image/jpeg' }));
+        },
+        'image/jpeg',
+        IMAGE_JPEG_QUALITY
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      resolve(file);
+    };
+    img.src = blobUrl;
+  });
+}
+
+function storagePathFromPublicUrl(url) {
+  if (!url || !url.includes('/storage/v1/object/public/')) return null;
+  const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(url.slice(idx + marker.length));
+}
+
+async function deleteVehicleStorageFiles(vehicleId, imageUrls = []) {
+  if (!(await isStorageReady())) return;
+  const paths = new Set();
+  (imageUrls || []).forEach((url) => {
+    const p = storagePathFromPublicUrl(url);
+    if (p) paths.add(p);
+  });
+  const { data: listed } = await supabase.storage.from(STORAGE_BUCKET).list(vehicleId, { limit: 200 });
+  (listed || []).forEach((f) => {
+    if (f?.name) paths.add(`${vehicleId}/${f.name}`);
+  });
+  if (paths.size === 0) return;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([...paths]);
+  if (error) console.warn('Storage cleanup:', error.message);
 }
 
 async function uploadVehicleImages(vehicleId) {
@@ -555,11 +703,13 @@ async function uploadVehicleImages(vehicleId) {
         pendingFiles += 1;
         continue;
       }
-      const safeName = item.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const fileToUpload = await compressImageFile(item.file);
+      const safeName = fileToUpload.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `${vehicleId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
-      const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, item.file, {
+      const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, fileToUpload, {
         cacheControl: '3600',
         upsert: false,
+        contentType: fileToUpload.type || 'image/jpeg',
       });
       if (error) throw new Error('Error subiendo imagen: ' + error.message);
       const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
@@ -568,7 +718,9 @@ async function uploadVehicleImages(vehicleId) {
   }
 
   if (pendingFiles > 0) {
-    showToast(`${pendingFiles} foto(s) no subidas: crea el bucket «vehicles» en Supabase Storage`, 'error');
+    throw new Error(
+      `${pendingFiles} foto(s) sin subir. En Supabase ejecuta sql/setup_completo.sql (crea el bucket «vehicles»). También puedes pegar URLs de imagen.`
+    );
   }
 
   return urls;
@@ -605,11 +757,13 @@ async function loadVehicles() {
 
   tbody.innerHTML = filtered.map(v => {
     const thumb = v.images && v.images[0]
-      ? `<img src="${v.images[0]}" alt="" class="vehicle-thumb">`
+      ? `<img src="${escapeHtml(v.images[0])}" alt="" class="vehicle-thumb">`
       : '';
+    const imgCount = (v.images || []).length;
+    const imgLabel = imgCount ? ` · ${imgCount} foto${imgCount > 1 ? 's' : ''}` : '';
     return `
     <tr>
-      <td>${thumb}<strong>${v.brand} ${v.model}</strong><br><span style="font-size:.78rem;color:var(--text-light);">${v.color || ''} · ${v.fuel} · ${v.transmission}</span></td>
+      <td>${thumb}<strong>${escapeHtml(v.brand)} ${escapeHtml(v.model)}</strong><br><span style="font-size:.78rem;color:var(--text-light);">${escapeHtml(v.color || '')} · ${escapeHtml(v.fuel)} · ${escapeHtml(v.transmission)}${imgLabel}</span></td>
       <td>${v.year}</td>
       <td>${v.type}</td>
       <td>${formatKm(v.km)}</td>
@@ -636,101 +790,107 @@ async function loadVehicles() {
 }
 
 function vehicleFormHTML(v = {}) {
+  const e = escapeHtml;
+  const sel = (a, b) => (a === b ? 'selected' : '');
   return `
     <form class="modal-form" id="vehicleForm">
-      <input type="hidden" id="vf_id" value="${v.id || ''}">
+      <input type="hidden" id="vf_id" value="${e(v.id || '')}">
       <div class="form-row">
         <div class="form-group">
           <label>Marca *</label>
-          <input type="text" id="vf_brand" value="${v.brand || ''}" required placeholder="Ej: Toyota">
+          <input type="text" id="vf_brand" list="brandSuggestions" value="${e(v.brand || '')}" required placeholder="Ej: Toyota" autocomplete="off">
         </div>
         <div class="form-group">
           <label>Modelo *</label>
-          <input type="text" id="vf_model" value="${v.model || ''}" required placeholder="Ej: Corolla">
+          <input type="text" id="vf_model" value="${e(v.model || '')}" required placeholder="Ej: Corolla">
         </div>
       </div>
+      <datalist id="brandSuggestions"></datalist>
       <div class="form-row-3">
         <div class="form-group">
           <label>Año *</label>
-          <input type="number" id="vf_year" value="${v.year || new Date().getFullYear()}" required min="1990">
+          <input type="number" id="vf_year" value="${e(v.year || new Date().getFullYear())}" required min="1990">
         </div>
         <div class="form-group">
           <label>Tipo *</label>
           <select id="vf_type" required>
-            <option value="Sedán" ${v.type==='Sedán'?'selected':''}>Sedán</option>
-            <option value="SUV" ${v.type==='SUV'?'selected':''}>SUV</option>
-            <option value="Hatchback" ${v.type==='Hatchback'?'selected':''}>Hatchback</option>
-            <option value="Pickup" ${v.type==='Pickup'?'selected':''}>Pickup</option>
-            <option value="Coupé" ${v.type==='Coupé'?'selected':''}>Coupé</option>
-            <option value="Van" ${v.type==='Van'?'selected':''}>Van</option>
-            <option value="Convertible" ${v.type==='Convertible'?'selected':''}>Convertible</option>
+            <option value="Sedán" ${sel(v.type, 'Sedán')}>Sedán</option>
+            <option value="SUV" ${sel(v.type, 'SUV')}>SUV</option>
+            <option value="Hatchback" ${sel(v.type, 'Hatchback')}>Hatchback</option>
+            <option value="Pickup" ${sel(v.type, 'Pickup')}>Pickup</option>
+            <option value="Coupé" ${sel(v.type, 'Coupé')}>Coupé</option>
+            <option value="Van" ${sel(v.type, 'Van')}>Van</option>
+            <option value="Convertible" ${sel(v.type, 'Convertible')}>Convertible</option>
           </select>
         </div>
         <div class="form-group">
           <label>Kilometraje</label>
-          <input type="number" id="vf_km" value="${v.km || 0}" min="0">
+          <input type="number" id="vf_km" value="${e(v.km ?? 0)}" min="0">
         </div>
       </div>
       <div class="form-row-3">
         <div class="form-group">
           <label>Combustible</label>
           <select id="vf_fuel">
-            <option value="Bencina" ${v.fuel==='Bencina'?'selected':''}>Bencina</option>
-            <option value="Diésel" ${v.fuel==='Diésel'?'selected':''}>Diésel</option>
-            <option value="Híbrido" ${v.fuel==='Híbrido'?'selected':''}>Híbrido</option>
-            <option value="Eléctrico" ${v.fuel==='Eléctrico'?'selected':''}>Eléctrico</option>
-            <option value="GLP" ${v.fuel==='GLP'?'selected':''}>GLP</option>
+            <option value="Bencina" ${sel(v.fuel, 'Bencina')}>Bencina</option>
+            <option value="Diésel" ${sel(v.fuel, 'Diésel')}>Diésel</option>
+            <option value="Híbrido" ${sel(v.fuel, 'Híbrido')}>Híbrido</option>
+            <option value="Eléctrico" ${sel(v.fuel, 'Eléctrico')}>Eléctrico</option>
+            <option value="GLP" ${sel(v.fuel, 'GLP')}>GLP</option>
           </select>
         </div>
         <div class="form-group">
           <label>Transmisión</label>
           <select id="vf_transmission">
-            <option value="Manual" ${v.transmission==='Manual'?'selected':''}>Manual</option>
-            <option value="Automática" ${v.transmission==='Automática'?'selected':''}>Automática</option>
-            <option value="CVT" ${v.transmission==='CVT'?'selected':''}>CVT</option>
+            <option value="Manual" ${sel(v.transmission, 'Manual')}>Manual</option>
+            <option value="Automática" ${sel(v.transmission, 'Automática')}>Automática</option>
+            <option value="CVT" ${sel(v.transmission, 'CVT')}>CVT</option>
           </select>
         </div>
         <div class="form-group">
           <label>Color</label>
-          <input type="text" id="vf_color" value="${v.color || ''}" placeholder="Ej: Rojo">
+          <input type="text" id="vf_color" value="${e(v.color || '')}" placeholder="Ej: Rojo">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Precio de Venta *</label>
-          <input type="number" id="vf_price" value="${v.price || ''}" required min="1" placeholder="Ej: 15990000">
+          <input type="number" id="vf_price" value="${e(v.price ?? '')}" required min="1" placeholder="Ej: 15990000">
         </div>
         <div class="form-group">
           <label>Precio de Compra</label>
-          <input type="number" id="vf_purchase_price" value="${v.purchase_price || ''}" min="0" placeholder="Opcional">
+          <input type="number" id="vf_purchase_price" value="${e(v.purchase_price ?? '')}" min="0" placeholder="Opcional">
         </div>
       </div>
       <div class="form-row-3">
         <div class="form-group">
           <label>Patente</label>
-          <input type="text" id="vf_plate" value="${v.plate || ''}" placeholder="Ej: ABCD-12">
+          <input type="text" id="vf_plate" value="${e(v.plate || '')}" placeholder="Ej: ABCD-12">
         </div>
         <div class="form-group">
           <label>Motor</label>
-          <input type="text" id="vf_engine" value="${v.engine || ''}" placeholder="Ej: 2.0L Turbo">
+          <input type="text" id="vf_engine" value="${e(v.engine || '')}" placeholder="Ej: 2.0L Turbo">
         </div>
         <div class="form-group">
           <label>Estado</label>
           <select id="vf_status">
-            <option value="disponible" ${v.status==='disponible'?'selected':''}>Disponible</option>
-            <option value="reservado" ${v.status==='reservado'?'selected':''}>Reservado</option>
-            <option value="vendido" ${v.status==='vendido'?'selected':''}>Vendido</option>
+            <option value="disponible" ${sel(v.status, 'disponible')}>Disponible</option>
+            <option value="reservado" ${sel(v.status, 'reservado')}>Reservado</option>
+            <option value="vendido" ${sel(v.status, 'vendido')}>Vendido</option>
           </select>
         </div>
       </div>
       <div class="form-group">
         <label>Descripción</label>
-        <textarea id="vf_description" rows="3" placeholder="Descripción del vehículo...">${v.description || ''}</textarea>
+        <textarea id="vf_description" rows="4" placeholder="Descripción del vehículo para la web...">${e(v.description || '')}</textarea>
       </div>
       <div class="form-group image-manager-section">
         <label>Imágenes del vehículo</label>
-        <p class="text-muted" style="font-size:.8rem;margin-bottom:.5rem;">La primera imagen es la portada. Sin bucket Storage puedes pegar URLs de imagen.</p>
+        <p class="text-muted" style="font-size:.8rem;margin-bottom:.5rem;">La primera imagen es la portada. Arrastra las miniaturas para cambiar el orden. Sube JPG/PNG/WebP o pega URLs.</p>
+        <div id="vehicleImageDropZone" class="image-drop-zone">
         <div id="vehicleImageList" class="image-manager-list"></div>
+        <p class="image-drop-hint">Arrastra fotos aquí o usa los botones de abajo</p>
+        </div>
         <input type="file" id="vf_images_input" accept="image/jpeg,image/png,image/webp" multiple hidden>
         <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0;">
           <button type="button" class="btn btn-outline btn-sm" id="btnAddImages">+ Subir fotos</button>
@@ -743,21 +903,21 @@ function vehicleFormHTML(v = {}) {
         <div class="form-group">
           <label>Color carrocería (SVG)</label>
           <div class="color-preview">
-            <div class="color-swatch"><input type="color" id="vf_color1" value="${v.color1 || '#1a1a2e'}"></div>
+            <div class="color-swatch"><input type="color" id="vf_color1" value="${e(v.color1 || '#1a1a2e')}"></div>
             <span style="font-size:.78rem;color:var(--text-light);">Principal</span>
           </div>
         </div>
         <div class="form-group">
           <label>Color secundario (SVG)</label>
           <div class="color-preview">
-            <div class="color-swatch"><input type="color" id="vf_color2" value="${v.color2 || '#16213e'}"></div>
+            <div class="color-swatch"><input type="color" id="vf_color2" value="${e(v.color2 || '#16213e')}"></div>
             <span style="font-size:.78rem;color:var(--text-light);">Sombra</span>
           </div>
         </div>
         <div class="form-group">
           <label>Color ventanas (SVG)</label>
           <div class="color-preview">
-            <div class="color-swatch"><input type="color" id="vf_window_color" value="${v.window_color || '#a8d8ea'}"></div>
+            <div class="color-swatch"><input type="color" id="vf_window_color" value="${e(v.window_color || '#a8d8ea')}"></div>
             <span style="font-size:.78rem;color:var(--text-light);">Cristal</span>
           </div>
         </div>
@@ -770,15 +930,27 @@ function vehicleFormHTML(v = {}) {
   `;
 }
 
+async function loadBrandSuggestions() {
+  const { data } = await supabase.from('vehicles').select('brand');
+  const brands = [...new Set((data || []).map((r) => r.brand).filter(Boolean))].sort();
+  const list = document.getElementById('brandSuggestions');
+  if (list) {
+    list.innerHTML = brands.map((b) => `<option value="${escapeHtml(b)}">`).join('');
+  }
+}
+
 function openVehicleModal(vehicle = {}) {
-  openModal(vehicle.id ? 'Editar Vehículo' : 'Nuevo Vehículo', vehicleFormHTML(vehicle));
+  openModal(vehicle.id ? 'Editar Vehículo' : 'Nuevo Vehículo', vehicleFormHTML(vehicle), { wide: true });
   initVehicleImageManager(vehicle.images || []);
-  ['vf_brand', 'vf_model', 'vf_year', 'vf_price'].forEach(fid => {
+  loadBrandSuggestions();
+  ['vf_brand', 'vf_model', 'vf_year', 'vf_price', 'vf_description'].forEach((fid) => {
     document.getElementById(fid)?.addEventListener('input', updateVehicleLivePreview);
   });
   const form = document.getElementById('vehicleForm');
   form?.addEventListener('submit', saveVehicle);
 }
+
+window.openVehicleModal = openVehicleModal;
 
 async function saveVehicle(e) {
   e.preventDefault();
@@ -789,21 +961,52 @@ async function saveVehicle(e) {
   }
 
   const existingId = document.getElementById('vf_id').value;
+  const brand = document.getElementById('vf_brand').value.trim();
+  const model = document.getElementById('vf_model').value.trim();
+  const price = parseInt(document.getElementById('vf_price').value, 10);
+
+  if (!brand || !model) {
+    showToast('Marca y modelo son obligatorios', 'error');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = existingId ? 'Guardar Cambios' : 'Publicar Vehículo';
+    }
+    return;
+  }
+  if (!price || price < 1) {
+    showToast('Ingresa un precio de venta válido', 'error');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = existingId ? 'Guardar Cambios' : 'Publicar Vehículo';
+    }
+    return;
+  }
+
+  const hasPendingFiles = vehicleImageQueue.some((i) => i.type === 'file');
+  if (hasPendingFiles && !(await isStorageReady())) {
+    showToast('Para subir fotos ejecuta sql/setup_completo.sql en Supabase (bucket vehicles)', 'error');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = existingId ? 'Guardar Cambios' : 'Publicar Vehículo';
+    }
+    return;
+  }
+
   const payload = {
-    brand: document.getElementById('vf_brand').value,
-    model: document.getElementById('vf_model').value,
+    brand,
+    model,
     year: parseInt(document.getElementById('vf_year').value),
     type: document.getElementById('vf_type').value,
     km: parseInt(document.getElementById('vf_km').value) || 0,
     fuel: document.getElementById('vf_fuel').value,
     transmission: document.getElementById('vf_transmission').value,
-    color: document.getElementById('vf_color').value,
-    price: parseInt(document.getElementById('vf_price').value),
+    color: document.getElementById('vf_color').value.trim(),
+    price,
     purchase_price: parseInt(document.getElementById('vf_purchase_price').value) || null,
     plate: document.getElementById('vf_plate').value,
     engine: document.getElementById('vf_engine').value,
     status: document.getElementById('vf_status').value,
-    description: document.getElementById('vf_description').value,
+    description: document.getElementById('vf_description').value.trim(),
     color1: document.getElementById('vf_color1').value,
     color2: document.getElementById('vf_color2').value,
     window_color: document.getElementById('vf_window_color').value,
@@ -858,12 +1061,15 @@ window.toggleFeatured = async function(id, checked) {
 
 window.deleteVehicle = async function(id) {
   if (!confirm('¿Estás seguro de eliminar este vehículo? Esta acción no se puede deshacer.')) return;
+  const { data: row } = await supabase.from('vehicles').select('images').eq('id', id).single();
+  await deleteVehicleStorageFiles(id, row?.images || []);
   const { error } = await supabase.from('vehicles').delete().eq('id', id);
   if (error) {
     showToast('Error: ' + error.message, 'error');
   } else {
     showToast('Vehículo eliminado', 'success');
     loadVehicles();
+    loadDashboard();
   }
 };
 
