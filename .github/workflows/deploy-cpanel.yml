@@ -1,0 +1,41 @@
+# Despliega el sitio estático a cPanel cuando haces push a main.
+# Configura los secrets en GitHub (ver docs/DEPLOY-CPANEL.md).
+
+name: Deploy to cPanel (FTP)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cpanel
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Subir archivos por FTP a cPanel
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.CPANEL_FTP_HOST }}
+          username: ${{ secrets.CPANEL_FTP_USERNAME }}
+          password: ${{ secrets.CPANEL_FTP_PASSWORD }}
+          port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
+          protocol: ftp
+          local-dir: ./
+          server-dir: ${{ secrets.CPANEL_REMOTE_DIR }}
+          dangerous-clean-slate: false
+          dry-run: ${{ vars.CPANEL_DEPLOY_DRY_RUN == 'true' }}
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/.cursor/**
+            **/docs/**
+            README.md
+            .gitignore
