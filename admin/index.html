@@ -7,10 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=4">
+  <link rel="stylesheet" href="admin.css?v=5">
   <style>
-    /* Crítico: el panel se muestra siempre (sin depender de caché de CSS externo) */
     #adminLayout { display: flex !important; min-height: 100vh; }
+    .pages-viewport .page { display: none !important; }
+    .pages-viewport .page.active { display: block !important; }
   </style>
 </head>
 <body>
@@ -80,6 +81,8 @@
         <div id="supabaseStatus" class="supabase-status pending">Comprobando conexión con Supabase…</div>
         <p class="banner-note">Panel sin login (temporal). Si no puedes guardar datos, ejecuta <code>sql/open_admin_no_auth.sql</code> en Supabase.</p>
       </div>
+
+      <div class="pages-viewport" id="pagesViewport">
 
       <!-- Page: Dashboard -->
       <section class="page active" id="pageDashboard">
@@ -307,6 +310,8 @@
         </div>
       </section>
 
+      </div><!-- /.pages-viewport -->
+
     </main>
   </div>
 
@@ -325,6 +330,6 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js?v=4"></script>
+  <script src="admin.js?v=5"></script>
 </body>
 </html>
