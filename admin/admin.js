@@ -8,8 +8,8 @@
 /** Cambiar a true cuando quieras volver a exigir login */
 const REQUIRE_AUTH = false;
 
-const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
+const SUPABASE_URL = window.TRUST_MOTORS_SUPABASE?.url || 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
+const SUPABASE_ANON_KEY = window.TRUST_MOTORS_SUPABASE?.key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 
 if (!window.supabase) {
   document.body.innerHTML = '<p style="padding:2rem;font-family:sans-serif;">No se pudo cargar Supabase. Revisa tu conexión e intenta de nuevo.</p>';
@@ -94,7 +94,12 @@ function closeModal() {
 
 function initAdminPanel() {
   showAdmin();
-  loadDashboard();
+  const hash = (location.hash || '').replace('#', '');
+  if (hash && pageMap[hash]) {
+    loadPageData(hash);
+  } else {
+    loadDashboard();
+  }
   updateSupabaseStatus();
 }
 
@@ -289,6 +294,7 @@ function navigateTo(page) {
   if (titleEl) titleEl.textContent = pageMap[page].title;
   document.getElementById('sidebar')?.classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#' + page) location.hash = page;
 
   loadPageData(page);
 }
@@ -305,6 +311,7 @@ async function loadPageData(page) {
 }
 
 window.navigateTo = navigateTo;
+window.loadPageData = loadPageData;
 
 /* ── Dashboard ───────────────────────── */
 
@@ -1348,12 +1355,7 @@ function initBindings() {
     if (e.target === adminModal) closeModal();
   });
 
-  document.querySelector('.sidebar-nav')?.addEventListener('click', (e) => {
-    const link = e.target.closest('.sidebar-link[data-page]');
-    if (!link) return;
-    e.preventDefault();
-    navigateTo(link.dataset.page);
-  });
+  /* Navegación: manejada por index.html (adminSwitchPage) para evitar duplicados */
 
   bindOptional('sidebarToggle', 'click', () => {
     document.getElementById('sidebar')?.classList.toggle('open');
@@ -1392,9 +1394,6 @@ function initBindings() {
 function bootAdmin() {
   try {
     initBindings();
-    window.addEventListener('admin:page', (e) => {
-      if (e.detail?.page) loadPageData(e.detail.page);
-    });
     if (REQUIRE_AUTH) {
       supabase.auth.onAuthStateChange((_event, session) => {
         if (session) initAdminPanel();

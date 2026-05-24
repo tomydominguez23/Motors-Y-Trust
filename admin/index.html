@@ -7,11 +7,24 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=6">
+  <link rel="stylesheet" href="admin.css?v=7">
   <style>
     #adminLayout { display: flex !important; min-height: 100vh; }
-    .pages-viewport .page { display: none !important; }
-    .pages-viewport .page.active { display: block !important; }
+    .pages-viewport { flex: 1; width: 100%; min-height: 50vh; }
+    .pages-viewport > .page:not(.active) {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .pages-viewport > .page.active {
+      display: block !important;
+      visibility: visible !important;
+      height: auto !important;
+      min-height: 40vh;
+    }
   </style>
 </head>
 <body>
@@ -329,11 +342,16 @@
   <!-- Toast -->
   <div class="toast-container" id="toastContainer"></div>
 
+  <script>
+    window.TRUST_MOTORS_SUPABASE = {
+      url: 'https://rjsfkrgsyduiwyamhdkg.supabase.co',
+      key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o'
+    };
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    /* Navegación de respaldo si admin.js tarda o falla parcialmente */
-    document.addEventListener('DOMContentLoaded', function () {
-      var map = {
+    (function () {
+      var PAGE_MAP = {
         dashboard: { id: 'pageDashboard', title: 'Dashboard' },
         vehicles: { id: 'pageVehicles', title: 'Vehículos' },
         sales: { id: 'pageSales', title: 'Ventas' },
@@ -341,26 +359,87 @@
         inquiries: { id: 'pageInquiries', title: 'Consultas' },
         expenses: { id: 'pageExpenses', title: 'Gastos' }
       };
-      document.querySelector('.sidebar-nav')?.addEventListener('click', function (e) {
-        var btn = e.target.closest('[data-page]');
-        if (!btn) return;
-        e.preventDefault();
-        var key = btn.getAttribute('data-page');
-        var info = map[key];
+
+      function switchPage(key) {
+        var info = PAGE_MAP[key];
         if (!info) return;
         document.querySelectorAll('.sidebar-link[data-page]').forEach(function (b) {
-          b.classList.toggle('active', b === btn);
+          b.classList.toggle('active', b.getAttribute('data-page') === key);
         });
-        document.querySelectorAll('.pages-viewport .page').forEach(function (p) {
+        document.querySelectorAll('.pages-viewport > .page').forEach(function (p) {
           p.classList.remove('active');
         });
-        document.getElementById(info.id)?.classList.add('active');
-        var title = document.getElementById('pageTitle');
-        if (title) title.textContent = info.title;
-        window.dispatchEvent(new CustomEvent('admin:page', { detail: { page: key } }));
-      });
-    });
+        var pageEl = document.getElementById(info.id);
+        if (pageEl) pageEl.classList.add('active');
+        var titleEl = document.getElementById('pageTitle');
+        if (titleEl) titleEl.textContent = info.title;
+        window.scrollTo(0, 0);
+
+        function loadData() {
+          if (typeof window.loadPageData === 'function') {
+            window.loadPageData(key);
+            return true;
+          }
+          if (typeof window.navigateTo === 'function') {
+            window.navigateTo(key);
+            return true;
+          }
+          return false;
+        }
+        if (!loadData()) {
+          var tries = 0;
+          var timer = setInterval(function () {
+            if (loadData() || ++tries > 40) clearInterval(timer);
+          }, 100);
+        }
+      }
+
+      async function testSupabaseLink() {
+        var el = document.getElementById('supabaseStatus');
+        if (!el) return;
+        var cfg = window.TRUST_MOTORS_SUPABASE;
+        if (!window.supabase) {
+          el.textContent = 'No cargó Supabase JS — revisa tu conexión';
+          el.className = 'supabase-status error';
+          return;
+        }
+        var client = window.supabase.createClient(cfg.url, cfg.key);
+        var vehicles = await client.from('vehicles').select('id', { count: 'exact', head: true });
+        if (vehicles.error) {
+          el.textContent = 'Supabase con error: ' + vehicles.error.message;
+          el.className = 'supabase-status error';
+          return;
+        }
+        var summary = await client.from('dashboard_summary').select('*').single();
+        if (summary.error) {
+          el.textContent = 'Conectado a vehículos. Falta vista dashboard_summary (ejecuta sql/setup_completo.sql)';
+          el.className = 'supabase-status warn';
+          return;
+        }
+        el.textContent = 'Supabase conectado · ' + (vehicles.count ?? 0) + ' vehículos en la base de datos';
+        el.className = 'supabase-status ok';
+      }
+
+      function initShell() {
+        testSupabaseLink();
+        document.querySelector('.sidebar-nav')?.addEventListener('click', function (e) {
+          var btn = e.target.closest('.sidebar-link[data-page]');
+          if (!btn) return;
+          e.preventDefault();
+          switchPage(btn.getAttribute('data-page'));
+        });
+        var hash = (location.hash || '').replace('#', '');
+        if (PAGE_MAP[hash]) switchPage(hash);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initShell);
+      } else {
+        initShell();
+      }
+      window.adminSwitchPage = switchPage;
+    })();
   </script>
-  <script src="admin.js?v=6"></script>
+  <script src="admin.js?v=7"></script>
 </body>
 </html>
