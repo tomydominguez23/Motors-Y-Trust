@@ -8,7 +8,13 @@
 const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase;
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (err) {
+  console.error('Error inicializando Supabase:', err);
+  document.getElementById('loginError').textContent = 'Error de conexión con el servidor.';
+}
 
 /* ── Helpers ─────────────────────────── */
 
@@ -52,11 +58,18 @@ document.getElementById('adminModal').addEventListener('click', e => {
 /* ── Auth ────────────────────────────── */
 
 async function checkSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    showAdmin();
-    loadDashboard();
-  } else {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (session) {
+      showAdmin();
+      loadDashboard();
+    } else {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('adminLayout').style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Error verificando sesión:', err);
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('adminLayout').style.display = 'none';
   }
@@ -64,17 +77,31 @@ async function checkSession() {
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value;
+  const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
+  const submitBtn = e.target.querySelector('button[type="submit"]');
   errEl.textContent = '';
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Ingresando...';
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    errEl.textContent = 'Credenciales incorrectas. Intenta nuevamente.';
-  } else {
-    showAdmin();
-    loadDashboard();
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      console.error('Login error:', error);
+      errEl.textContent = error.message === 'Invalid login credentials'
+        ? 'Email o contraseña incorrectos.'
+        : 'Error: ' + error.message;
+    } else {
+      showAdmin();
+      loadDashboard();
+    }
+  } catch (err) {
+    console.error('Error de conexión:', err);
+    errEl.textContent = 'Error de conexión. Verifica tu internet e intenta nuevamente.';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Iniciar Sesión';
   }
 });
 
@@ -959,4 +986,8 @@ function debounce(fn, ms) {
 
 /* ── Init ────────────────────────────── */
 
-checkSession();
+checkSession().catch(err => {
+  console.error('Error en inicialización:', err);
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminLayout').style.display = 'none';
+});
