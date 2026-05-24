@@ -20,14 +20,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Subir archivos por FTP a cPanel
+      - name: Subir archivos por FTPS a cPanel
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.CPANEL_FTP_HOST }}
           username: ${{ secrets.CPANEL_FTP_USERNAME }}
           password: ${{ secrets.CPANEL_FTP_PASSWORD }}
           port: ${{ secrets.CPANEL_FTP_PORT || 21 }}
-          protocol: ftp
+          protocol: ftps
+          security: loose
           local-dir: ./
           server-dir: ${{ secrets.CPANEL_REMOTE_DIR }}
           dangerous-clean-slate: false
@@ -39,3 +40,4 @@ jobs:
             **/docs/**
             README.md
             .gitignore
+            **/sql/**
