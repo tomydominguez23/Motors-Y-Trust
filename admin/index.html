@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=5">
+  <link rel="stylesheet" href="admin.css?v=6">
   <style>
     #adminLayout { display: flex !important; min-height: 100vh; }
     .pages-viewport .page { display: none !important; }
@@ -79,7 +79,7 @@
 
       <div class="auth-warning-banner" id="authWarningBanner">
         <div id="supabaseStatus" class="supabase-status pending">Comprobando conexión con Supabase…</div>
-        <p class="banner-note">Panel sin login (temporal). Si no puedes guardar datos, ejecuta <code>sql/open_admin_no_auth.sql</code> en Supabase.</p>
+        <p class="banner-note">Si no puedes guardar: ejecuta <code>sql/setup_completo.sql</code> en Supabase y crea el bucket <strong>vehicles</strong> en Storage (público).</p>
       </div>
 
       <div class="pages-viewport" id="pagesViewport">
@@ -330,6 +330,37 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js?v=5"></script>
+  <script>
+    /* Navegación de respaldo si admin.js tarda o falla parcialmente */
+    document.addEventListener('DOMContentLoaded', function () {
+      var map = {
+        dashboard: { id: 'pageDashboard', title: 'Dashboard' },
+        vehicles: { id: 'pageVehicles', title: 'Vehículos' },
+        sales: { id: 'pageSales', title: 'Ventas' },
+        customers: { id: 'pageCustomers', title: 'Clientes' },
+        inquiries: { id: 'pageInquiries', title: 'Consultas' },
+        expenses: { id: 'pageExpenses', title: 'Gastos' }
+      };
+      document.querySelector('.sidebar-nav')?.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-page]');
+        if (!btn) return;
+        e.preventDefault();
+        var key = btn.getAttribute('data-page');
+        var info = map[key];
+        if (!info) return;
+        document.querySelectorAll('.sidebar-link[data-page]').forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+        document.querySelectorAll('.pages-viewport .page').forEach(function (p) {
+          p.classList.remove('active');
+        });
+        document.getElementById(info.id)?.classList.add('active');
+        var title = document.getElementById('pageTitle');
+        if (title) title.textContent = info.title;
+        window.dispatchEvent(new CustomEvent('admin:page', { detail: { page: key } }));
+      });
+    });
+  </script>
+  <script src="admin.js?v=6"></script>
 </body>
 </html>
