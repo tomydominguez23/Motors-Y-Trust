@@ -3,7 +3,7 @@
 const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 const WHATSAPP_NUMBER = '56948406684';
-const DEALER_LOCATION = 'Santiago, Chile';
+const DEALER_LOCATION = 'Zoco La Dehesa, piso -3';
 
 let supabaseClient = null;
 if (window.supabase) {
