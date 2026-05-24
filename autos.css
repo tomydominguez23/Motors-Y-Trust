@@ -1,0 +1,567 @@
+/* Trust Motors — Catálogo (autos.html) */
+
+.catalog-page {
+  padding-top: 72px;
+  background: var(--color-bg-soft);
+  min-height: 100vh;
+}
+
+.catalog-main {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.catalog-topbar {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  color: #fff;
+  padding: 1.25rem 0 1.5rem;
+}
+
+.catalog-topbar-inner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.catalog-back {
+  display: inline-block;
+  font-size: .85rem;
+  opacity: .85;
+  margin-bottom: .35rem;
+  color: #fff;
+}
+
+.catalog-back:hover { opacity: 1; }
+
+.catalog-title {
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.catalog-subtitle {
+  font-size: .9rem;
+  opacity: .9;
+  margin-top: .25rem;
+}
+
+.catalog-filters-toggle {
+  flex-shrink: 0;
+  background: rgba(255,255,255,.15);
+  border-color: rgba(255,255,255,.35);
+  color: #fff;
+  min-height: 44px;
+}
+
+.catalog-filters-toggle:hover {
+  background: rgba(255,255,255,.25);
+  border-color: #fff;
+}
+
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem 1.5rem 3rem;
+  align-items: start;
+}
+
+.catalog-filters {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  padding: 1.25rem;
+  position: sticky;
+  top: 88px;
+  box-shadow: var(--shadow-sm);
+}
+
+.catalog-filters-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.catalog-filters-head h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.catalog-filters-close {
+  display: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--color-text-light);
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.filter-block { margin-bottom: 1rem; }
+
+.filter-label {
+  display: block;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--color-text-light);
+  margin-bottom: .5rem;
+}
+
+.type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.type-chip {
+  padding: .45rem .85rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-border);
+  font-size: .8rem;
+  font-weight: 600;
+  background: #fff;
+  transition: var(--transition);
+  min-height: 40px;
+}
+
+.type-chip:hover {
+  border-color: var(--color-primary);
+}
+
+.type-chip.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.filter-grid {
+  display: grid;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.filter-field label {
+  display: block;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--color-text-light);
+  margin-bottom: .3rem;
+}
+
+.filter-field select {
+  width: 100%;
+  padding: .65rem .75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fff;
+  min-height: 44px;
+}
+
+.filter-check {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .9rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.filter-check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--color-primary);
+}
+
+.filter-actions {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.filter-actions .btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.catalog-results { min-width: 0; }
+
+.catalog-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.catalog-count {
+  font-weight: 600;
+  font-size: .95rem;
+}
+
+.catalog-sort {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.catalog-sort label {
+  font-size: .8rem;
+  color: var(--color-text-light);
+  white-space: nowrap;
+}
+
+.catalog-sort select {
+  padding: .5rem .65rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  min-height: 44px;
+  font-size: .85rem;
+}
+
+.catalog-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-text-light);
+}
+
+.catalog-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: catalog-spin .8s linear infinite;
+}
+
+@keyframes catalog-spin {
+  to { transform: rotate(360deg); }
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Tarjeta estilo marketplace */
+.catalog-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.catalog-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.catalog-card-media {
+  position: relative;
+  aspect-ratio: 4/3;
+  background: #eef1f5;
+  overflow: hidden;
+}
+
+.catalog-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.catalog-card-media .catalog-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-light);
+  font-size: .85rem;
+}
+
+.catalog-photo-badge {
+  position: absolute;
+  left: .65rem;
+  bottom: .65rem;
+  background: rgba(0,0,0,.65);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .25rem .5rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+}
+
+.catalog-finance-badge {
+  position: absolute;
+  top: .65rem;
+  right: .65rem;
+  background: #059669;
+  color: #fff;
+  font-size: .68rem;
+  font-weight: 700;
+  padding: .3rem .55rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.catalog-card-body {
+  padding: 1rem 1rem .85rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.catalog-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: .15rem;
+}
+
+.catalog-card-sub {
+  font-size: .8rem;
+  color: var(--color-text-light);
+  margin-bottom: .75rem;
+}
+
+.catalog-card-prices {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+
+.catalog-card-prices .label {
+  font-size: .65rem;
+  text-transform: uppercase;
+  color: var(--color-text-light);
+  letter-spacing: .03em;
+}
+
+.catalog-card-prices .year {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.catalog-card-prices .price {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--color-primary);
+  text-align: right;
+}
+
+.catalog-card-finance {
+  font-size: .78rem;
+  color: #059669;
+  font-weight: 600;
+  text-align: right;
+  margin-top: -.35rem;
+  margin-bottom: .5rem;
+}
+
+.catalog-card-specs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .35rem;
+  padding: .65rem 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: .85rem;
+}
+
+.catalog-spec {
+  text-align: center;
+  font-size: .65rem;
+  color: var(--color-text-light);
+}
+
+.catalog-spec strong {
+  display: block;
+  font-size: .72rem;
+  color: var(--color-text);
+  font-weight: 600;
+  margin-top: .15rem;
+}
+
+.catalog-spec svg {
+  display: block;
+  margin: 0 auto .2rem;
+  opacity: .55;
+}
+
+.catalog-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  margin-top: auto;
+}
+
+.catalog-card-actions .btn {
+  justify-content: center;
+  font-size: .78rem;
+  padding: .65rem .5rem;
+  min-height: 44px;
+}
+
+.catalog-card-actions .btn-contact {
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+
+.catalog-card-actions .btn-contact:hover {
+  background: var(--color-primary);
+}
+
+.catalog-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+}
+
+.catalog-more-wrap {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.catalog-more-wrap .btn {
+  min-height: 44px;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.catalog-filters-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 150;
+}
+
+.catalog-filters-backdrop.visible {
+  display: block;
+}
+
+.catalog-wa-fab {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--color-success);
+  color: #fff;
+  padding: .75rem 1rem;
+  border-radius: 999px;
+  font-size: .8rem;
+  font-weight: 600;
+  box-shadow: 0 6px 24px rgba(37,211,102,.45);
+  max-width: calc(100vw - 2rem);
+}
+
+.catalog-wa-fab span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.catalog-filters-toggle { display: none; }
+
+/* ── Móvil ─────────────────────────── */
+
+@media (max-width: 960px) {
+  .catalog-layout {
+    grid-template-columns: 1fr;
+    padding: 1rem 1rem 2.5rem;
+  }
+
+  .catalog-filters-toggle {
+    display: inline-flex;
+  }
+
+  .catalog-filters {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(100%, 340px);
+    z-index: 200;
+    border-radius: 0;
+    transform: translateX(-105%);
+    transition: transform .3s ease;
+    overflow-y: auto;
+    top: 0;
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+  }
+
+  .catalog-filters.open {
+    transform: translateX(0);
+  }
+
+  .catalog-filters-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .catalog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-card-specs {
+    grid-template-columns: repeat(2, 1fr);
+    gap: .5rem;
+  }
+
+  .catalog-wa-fab span {
+    display: none;
+  }
+
+  .catalog-wa-fab {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+}
+
+@media (max-width: 480px) {
+  .catalog-page { padding-top: 64px; }
+
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .catalog-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .catalog-sort select {
+    width: 100%;
+  }
+}

@@ -1228,6 +1228,91 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   }
 }
 
+/* ── Inicio: destacados + móvil extra ───── */
+
+.section-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: left;
+}
+
+.section-header-row .section-title,
+.section-header-row .section-subtitle {
+  text-align: left;
+}
+
+.featured-section {
+  padding-top: 3rem;
+}
+
+.featured-cta {
+  margin-top: 2rem;
+}
+
+.btn-lg-mobile {
+  min-height: 48px;
+  padding: .85rem 1.5rem;
+}
+
+.btn-whatsapp-label {
+  display: inline;
+}
+
+.vehicle-card-footer {
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.vehicle-card-footer .btn-view-detail {
+  min-height: 44px;
+}
+
+.whatsapp-float {
+  bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+  right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+@media (max-width: 768px) {
+  .section-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .section-header-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .featured-section .vehicles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vehicle-card-footer .btn-view-detail {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .vehicles-sort {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: .25rem;
+  }
+
+  .sort-btn {
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+}
+
 @media (max-width: 480px) {
   .hero-title {
     font-size: 2rem;
@@ -1241,9 +1326,19 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   .hero-actions .btn {
     width: 100%;
     justify-content: center;
+    min-height: 48px;
   }
 
   .services-grid {
     grid-template-columns: 1fr;
+  }
+
+  html {
+    font-size: 15px;
+  }
+
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }

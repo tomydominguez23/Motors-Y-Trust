@@ -348,65 +348,24 @@ function renderVehicles() {
   }
 }
 
-function bindUiHandlers() {
-  document.querySelectorAll('.sort-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentFilter = btn.dataset.sort;
-      visibleCount = 8;
-      renderVehicles();
-    });
-  });
+function renderFeatured() {
+  const grid = document.getElementById('featuredGrid');
+  const empty = document.getElementById('featuredEmpty');
+  if (!grid) return;
 
-  const btnSearch = document.getElementById('btnSearch');
-  if (!btnSearch) return;
+  grid.innerHTML = '';
+  const featured = allVehicles.filter((v) => v.is_featured);
+  const list = (featured.length ? featured : allVehicles).slice(0, 4);
 
-  btnSearch.addEventListener('click', () => {
-  currentBrand = document.getElementById('filterBrand').value;
-  currentType = document.getElementById('filterType').value;
-  currentMaxPrice = document.getElementById('filterPrice').value;
-  currentMinYear = document.getElementById('filterYear').value;
-
-  if (currentType) {
-    currentFilter = currentType;
-    document.querySelectorAll('.sort-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.sort === currentType);
-    });
-  } else {
-    currentFilter = 'all';
-    document.querySelectorAll('.sort-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.sort === 'all');
-    });
+  if (list.length === 0) {
+    if (empty) empty.style.display = 'block';
+    return;
   }
+  if (empty) empty.style.display = 'none';
+  list.forEach((v) => grid.appendChild(createVehicleCard(v)));
+}
 
-  visibleCount = 8;
-  renderVehicles();
-  document.getElementById('vehiculos')?.scrollIntoView({ behavior: 'smooth' });
-  });
-
-  document.getElementById('btnClearFilters')?.addEventListener('click', () => {
-  currentFilter = 'all';
-  currentBrand = '';
-  currentType = '';
-  currentMaxPrice = '';
-  currentMinYear = '';
-  document.getElementById('filterBrand').value = '';
-  document.getElementById('filterType').value = '';
-  document.getElementById('filterPrice').value = '';
-  document.getElementById('filterYear').value = '';
-  document.querySelectorAll('.sort-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.sort === 'all');
-  });
-  visibleCount = 8;
-  renderVehicles();
-  });
-
-  document.getElementById('btnLoadMore')?.addEventListener('click', () => {
-    visibleCount += 4;
-    renderVehicles();
-  });
-
+function bindUiHandlers() {
   document.getElementById('modalClose')?.addEventListener('click', closeModal);
   document.getElementById('modalClose2')?.addEventListener('click', closeModal);
   document.getElementById('vehicleModal')?.addEventListener('click', (e) => {
@@ -583,7 +542,11 @@ async function applySiteSettings() {
 async function init() {
   bindUiHandlers();
   await fetchVehicles();
-  renderVehicles();
+  if (document.getElementById('featuredGrid')) {
+    renderFeatured();
+  } else if (document.getElementById('vehiclesGrid')) {
+    renderVehicles();
+  }
   applySiteSettings().catch((err) => console.warn('Trust Motors: site_settings', err));
 }
 

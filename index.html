@@ -21,7 +21,7 @@
       </a>
       <nav class="nav" id="nav">
         <a href="#inicio" class="nav-link active">Inicio</a>
-        <a href="#vehiculos" class="nav-link">Vehículos</a>
+        <a href="autos.html" class="nav-link">Vehículos</a>
         <a href="#servicios" class="nav-link">Servicios</a>
         <a href="#nosotros" class="nav-link">Nosotros</a>
         <a href="#contacto" class="nav-link">Contacto</a>
@@ -46,7 +46,7 @@
         <h1 class="hero-title">Tu próximo auto <br>está aquí</h1>
         <p class="hero-desc">Vehículos seleccionados con financiamiento a tu medida y la transparencia que mereces.</p>
         <div class="hero-actions">
-          <a href="#vehiculos" class="btn btn-primary">Ver Vehículos</a>
+          <a href="autos.html" class="btn btn-primary">Ver Vehículos</a>
           <a href="#contacto" class="btn btn-outline">Contáctanos</a>
         </div>
         <div class="hero-stats">
@@ -118,92 +118,26 @@
     </div>
   </section>
 
-  <!-- Search Bar -->
-  <section class="search-section">
+  <!-- Destacados (enlace al catálogo completo) -->
+  <section class="vehicles-section featured-section" id="destacados">
     <div class="container">
-      <div class="search-bar">
-        <div class="search-field">
-          <label>Marca</label>
-          <select id="filterBrand">
-            <option value="">Todas</option>
-            <option value="Toyota">Toyota</option>
-            <option value="Hyundai">Hyundai</option>
-            <option value="Kia">Kia</option>
-            <option value="Chevrolet">Chevrolet</option>
-            <option value="Nissan">Nissan</option>
-            <option value="Mazda">Mazda</option>
-            <option value="Suzuki">Suzuki</option>
-            <option value="BMW">BMW</option>
-          </select>
+      <div class="section-header section-header-row">
+        <div>
+          <h2 class="section-title">Vehículos destacados</h2>
+          <p class="section-subtitle">Una muestra de nuestro stock. Explora el catálogo completo con filtros.</p>
         </div>
-        <div class="search-field">
-          <label>Tipo</label>
-          <select id="filterType">
-            <option value="">Todos</option>
-            <option value="SUV">SUV</option>
-            <option value="Sedán">Sedán</option>
-            <option value="Hatchback">Hatchback</option>
-            <option value="Pickup">Pickup</option>
-          </select>
-        </div>
-        <div class="search-field">
-          <label>Precio máx.</label>
-          <select id="filterPrice">
-            <option value="">Sin límite</option>
-            <option value="8000000">$8.000.000</option>
-            <option value="12000000">$12.000.000</option>
-            <option value="16000000">$16.000.000</option>
-            <option value="20000000">$20.000.000</option>
-            <option value="25000000">$25.000.000</option>
-          </select>
-        </div>
-        <div class="search-field">
-          <label>Año desde</label>
-          <select id="filterYear">
-            <option value="">Cualquiera</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022">2022</option>
-            <option value="2020">2020</option>
-            <option value="2018">2018</option>
-          </select>
-        </div>
-        <button class="btn btn-primary btn-search" id="btnSearch">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Buscar
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Vehicles -->
-  <section class="vehicles-section" id="vehiculos">
-    <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">Nuestros Vehículos</h2>
-        <p class="section-subtitle">Cada auto es inspeccionado y garantizado para tu tranquilidad</p>
+        <a href="autos.html" class="btn btn-primary">Ver todos los autos</a>
       </div>
 
-      <div class="vehicles-sort">
-        <button class="sort-btn active" data-sort="all">Todos</button>
-        <button class="sort-btn" data-sort="SUV">SUV</button>
-        <button class="sort-btn" data-sort="Sedán">Sedán</button>
-        <button class="sort-btn" data-sort="Hatchback">Hatchback</button>
-        <button class="sort-btn" data-sort="Pickup">Pickup</button>
+      <div class="vehicles-grid" id="featuredGrid"></div>
+
+      <div class="vehicles-empty" id="featuredEmpty" style="display:none;">
+        <p>Aún no hay vehículos publicados.</p>
+        <a href="autos.html" class="btn btn-outline">Ir al catálogo</a>
       </div>
 
-      <div class="vehicles-grid" id="vehiclesGrid">
-        <!-- Cards rendered by JS -->
-      </div>
-
-      <div class="vehicles-empty" id="vehiclesEmpty" style="display:none;">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <p>No se encontraron vehículos con esos filtros</p>
-        <button class="btn btn-outline" id="btnClearFilters">Limpiar filtros</button>
-      </div>
-
-      <div class="text-center" style="margin-top:2rem;">
-        <button class="btn btn-outline" id="btnLoadMore" style="display:none;">Cargar más vehículos</button>
+      <div class="text-center featured-cta">
+        <a href="autos.html" class="btn btn-outline btn-lg-mobile">Explorar catálogo completo →</a>
       </div>
     </div>
   </section>
@@ -368,7 +302,7 @@
         <div class="footer-links">
           <h4>Navegación</h4>
           <a href="#inicio">Inicio</a>
-          <a href="#vehiculos">Vehículos</a>
+          <a href="autos.html">Vehículos</a>
           <a href="#servicios">Servicios</a>
           <a href="#contacto">Contacto</a>
           <a href="panel.html">Panel de administración</a>
@@ -429,6 +363,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="finance-utils.js?v=1"></script>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
