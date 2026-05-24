@@ -625,6 +625,12 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   font-size: .8rem;
 }
 
+.vehicle-card-footer a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ── Services ────────────────────────── */
 
 .services-section {

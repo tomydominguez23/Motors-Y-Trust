@@ -172,6 +172,10 @@ function formatKm(km) {
   return Number(km).toLocaleString('es-CL') + ' km';
 }
 
+function vehicleDetailUrl(id) {
+  return `vehiculo.html?id=${encodeURIComponent(id)}`;
+}
+
 /* ── Vehicle Card ────────────────────── */
 
 function createVehicleCard(vehicle) {
@@ -220,12 +224,16 @@ function createVehicleCard(vehicle) {
           <span class="vehicle-price">${formatPrice(vehicle.price)}</span>
           <span class="vehicle-price-sub">Precio contado</span>
         </div>
-        <button class="btn btn-primary btn-view-detail">Ver más</button>
+        <a href="${vehicleDetailUrl(vehicle.id)}" class="btn btn-primary btn-view-detail">Ver publicación</a>
       </div>
     </div>
   `;
 
-  card.addEventListener('click', () => openModal(vehicle));
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;
+    window.location.href = vehicleDetailUrl(vehicle.id);
+  });
+  card.style.cursor = 'pointer';
   return card;
 }
 
