@@ -469,10 +469,50 @@ document.getElementById('contactForm').addEventListener('submit', async (e) => {
   e.target.reset();
 });
 
+/* ── Site images (logo, banners) ─────── */
+
+async function applySiteSettings() {
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.from('site_settings').select('key, value');
+  if (error || !data?.length) return;
+
+  const settings = {};
+  data.forEach((row) => { if (row.value) settings[row.key] = row.value; });
+
+  if (settings.logo_header) {
+    document.querySelectorAll('.header .logo, .footer-brand .logo').forEach((el) => {
+      el.innerHTML = `<img src="${settings.logo_header}" alt="Trust Motors" class="site-logo-img">`;
+    });
+  }
+
+  if (settings.hero_banner) {
+    const showcase = document.querySelector('.hero-car-showcase');
+    if (showcase) {
+      showcase.innerHTML = `<img src="${settings.hero_banner}" alt="Vehículos Trust Motors" class="hero-banner-img">`;
+    }
+  }
+
+  if (settings.hero_background) {
+    const hero = document.querySelector('.hero');
+    if (hero) {
+      hero.style.backgroundImage = `url(${settings.hero_background})`;
+      hero.style.backgroundSize = 'cover';
+      hero.style.backgroundPosition = 'center';
+    }
+  }
+
+  if (settings.about_image) {
+    const aboutVisual = document.querySelector('.about-visual');
+    if (aboutVisual) {
+      aboutVisual.innerHTML = `<img src="${settings.about_image}" alt="Sobre Trust Motors" class="about-banner-img">`;
+    }
+  }
+}
+
 /* ── Init ────────────────────────────── */
 
 async function init() {
-  await fetchVehicles();
+  await Promise.all([fetchVehicles(), applySiteSettings()]);
   renderVehicles();
 }
 
