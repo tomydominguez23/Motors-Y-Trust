@@ -236,26 +236,26 @@ CREATE POLICY "Vehículos disponibles son públicos"
 -- Usuarios autenticados tienen acceso total a vehículos
 CREATE POLICY "Admin acceso total vehículos"
   ON vehicles FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Solo usuarios autenticados pueden ver/modificar clientes
 CREATE POLICY "Admin acceso total clientes"
   ON customers FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Solo usuarios autenticados pueden ver/modificar ventas
 CREATE POLICY "Admin acceso total ventas"
   ON sales FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Solo usuarios autenticados pueden ver/modificar gastos
 CREATE POLICY "Admin acceso total gastos"
   ON expenses FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Consultas: cualquiera puede crear, solo admin puede leer/modificar
 CREATE POLICY "Cualquiera puede crear consulta"
@@ -264,10 +264,19 @@ CREATE POLICY "Cualquiera puede crear consulta"
 
 CREATE POLICY "Admin acceso total consultas"
   ON inquiries FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
--- ── 11. STORAGE BUCKET ──────────────────────────────────────
+-- ── 11. USUARIO ADMIN (Authentication) ─────────────────────
+-- El panel admin usa Supabase Auth, NO la tabla customers.
+--
+-- 1. Ir a Authentication → Users → Add user
+-- 2. Email + contraseña (marcar "Auto Confirm User" si no quieres confirmar por correo)
+-- 3. O desactivar confirmación: Authentication → Providers → Email → Confirm email = OFF
+--
+-- Sin un usuario en Auth, signInWithPassword devolverá "Invalid login credentials".
+
+-- ── 12. STORAGE BUCKET ──────────────────────────────────────
 -- NOTA: Ejecutar esto por separado o desde la UI de Supabase:
 --
 -- 1. Ir a Storage > New Bucket
