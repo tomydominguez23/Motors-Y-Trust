@@ -29,10 +29,6 @@ function formatKm(km) {
   return n.toLocaleString('es-CL') + ' km';
 }
 
-function estimateMonthly(price) {
-  return Math.round(Number(price) / 48);
-}
-
 function getVehicleIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get('id') || params.get('v');
@@ -237,8 +233,21 @@ function renderVehicle(vehicle) {
   document.getElementById('vdSubtitle').textContent =
     `${vehicle.brand} ${vehicle.model}`.toUpperCase();
   document.getElementById('vdPrice').textContent = formatPrice(vehicle.price);
-  document.getElementById('vdFinanceAmount').textContent =
-    formatPrice(estimateMonthly(vehicle.price));
+
+  const financeBox = document.getElementById('vdFinanceBox');
+  const monthly = window.TrustFinance?.getVehicleMonthlyPayment(vehicle);
+  if (financeBox) {
+    if (monthly) {
+      financeBox.hidden = false;
+      document.getElementById('vdFinanceAmount').textContent = formatPrice(monthly);
+      const noteEl = document.getElementById('vdFinanceNote');
+      if (noteEl && window.TrustFinance?.formatFinanceNote) {
+        noteEl.textContent = TrustFinance.formatFinanceNote(vehicle);
+      }
+    } else {
+      financeBox.hidden = true;
+    }
+  }
 
   const desc = vehicle.description?.trim() ||
     `Vehículo ${vehicle.brand} ${vehicle.model} año ${vehicle.year} disponible en Trust Motors.`;
@@ -253,9 +262,10 @@ function renderVehicle(vehicle) {
     specItem(ICONS.loc, 'Ubicación', DEALER_LOCATION),
   ].join('');
 
+  const financeTxt = monthly ? ` Cuota referencial: ${formatPrice(monthly)}/mes.` : '';
   const msg = encodeURIComponent(
     `Hola, me interesa el ${vehicle.brand} ${vehicle.model} ${vehicle.year} ` +
-    `(${formatPrice(vehicle.price)}) publicado en Trust Motors. ¿Está disponible? ` +
+    `(${formatPrice(vehicle.price)}).${financeTxt} Publicado en Trust Motors. ` +
     window.location.href
   );
   document.getElementById('vdWhatsApp').href =

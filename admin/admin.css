@@ -221,6 +221,29 @@ body.admin-requires-auth #adminLayout { display: none !important; }
 /* ── Gestor de imágenes (vehículos) ─── */
 
 .image-manager-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+.finance-form-section {
+  padding: 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.finance-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  margin: 0.5rem 0 0.75rem;
+  cursor: pointer;
+}
+
+.finance-preview-line {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 0.5rem;
+}
 .image-manager-list {
   display: flex; flex-wrap: wrap; gap: .75rem; margin: .75rem 0;
 }

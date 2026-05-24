@@ -106,3 +106,11 @@ CREATE POLICY "Temporal: anon actualiza site"
 DROP POLICY IF EXISTS "Temporal: anon elimina site" ON storage.objects;
 CREATE POLICY "Temporal: anon elimina site"
   ON storage.objects FOR DELETE TO anon USING (bucket_id = 'site');
+
+-- Financiamiento por vehículo (cuota referencial)
+ALTER TABLE public.vehicles
+  ADD COLUMN IF NOT EXISTS finance_enabled BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS finance_months INTEGER NOT NULL DEFAULT 48 CHECK (finance_months >= 6 AND finance_months <= 84),
+  ADD COLUMN IF NOT EXISTS finance_down_payment BIGINT NOT NULL DEFAULT 0 CHECK (finance_down_payment >= 0),
+  ADD COLUMN IF NOT EXISTS finance_annual_rate NUMERIC(5, 2) NOT NULL DEFAULT 24.00 CHECK (finance_annual_rate >= 0 AND finance_annual_rate <= 60),
+  ADD COLUMN IF NOT EXISTS finance_monthly BIGINT DEFAULT NULL CHECK (finance_monthly IS NULL OR finance_monthly > 0);

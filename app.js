@@ -192,6 +192,11 @@ function createVehicleCard(vehicle) {
     badgeHTML = '<span class="vehicle-badge featured">Destacado</span>';
   }
 
+  const monthly = window.TrustFinance?.getVehicleMonthlyPayment(vehicle);
+  const financeLine = monthly
+    ? `<span class="vehicle-finance-line">Desde ${formatPrice(monthly)}/mes*</span>`
+    : '';
+
   const coverImage = vehicle.images && vehicle.images.length > 0 ? vehicle.images[0] : null;
   const imageBlock = coverImage
     ? `<img src="${coverImage}" alt="${vehicle.brand} ${vehicle.model}" class="vehicle-photo" loading="lazy">`
@@ -223,6 +228,7 @@ function createVehicleCard(vehicle) {
         <div>
           <span class="vehicle-price">${formatPrice(vehicle.price)}</span>
           <span class="vehicle-price-sub">Precio contado</span>
+          ${financeLine}
         </div>
         <a href="${vehicleDetailUrl(vehicle.id)}" class="btn btn-primary btn-view-detail">Ver publicación</a>
       </div>

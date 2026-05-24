@@ -889,6 +889,38 @@ function vehicleFormHTML(v = {}) {
           <input type="number" id="vf_purchase_price" value="${e(v.purchase_price ?? '')}" min="0" placeholder="Opcional">
         </div>
       </div>
+      <div class="form-group finance-form-section">
+        <label>Financiamiento (cuota en la web)</label>
+        <label class="finance-toggle">
+          <input type="checkbox" id="vf_finance_enabled" ${v.finance_enabled !== false ? 'checked' : ''}>
+          Mostrar cuota referencial en la publicación
+        </label>
+        <div class="form-row-3" id="vfFinanceFields">
+          <div class="form-group">
+            <label>Pie / entrada ($)</label>
+            <input type="number" id="vf_finance_down" value="${e(v.finance_down_payment ?? 0)}" min="0" step="10000">
+          </div>
+          <div class="form-group">
+            <label>Plazo (meses)</label>
+            <input type="number" id="vf_finance_months" value="${e(v.finance_months ?? 48)}" min="6" max="84">
+          </div>
+          <div class="form-group">
+            <label>Tasa anual referencial (%)</label>
+            <input type="number" id="vf_finance_rate" value="${e(v.finance_annual_rate ?? 24)}" min="0" max="60" step="0.1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cuota mensual mostrada ($)</label>
+            <input type="number" id="vf_finance_monthly" value="${e(v.finance_monthly ?? '')}" min="0" placeholder="Vacío = calcular automático">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end;">
+            <button type="button" class="btn btn-outline btn-sm" id="btnCalcFinance">Calcular desde precio</button>
+          </div>
+        </div>
+        <p class="finance-preview-line" id="vfFinancePreview">Cuota referencial: —</p>
+        <p class="text-muted" style="font-size:.75rem;">Ejecuta <code>sql/vehicles_financing.sql</code> en Supabase si al guardar aparece error de columnas.</p>
+      </div>
       <div class="form-row-3">
         <div class="form-group">
           <label>Patente</label>
@@ -966,6 +998,70 @@ async function loadBrandSuggestions() {
   }
 }
 
+function readFinanceFromForm() {
+  const price = parseInt(document.getElementById('vf_price')?.value, 10) || 0;
+  const down = parseInt(document.getElementById('vf_finance_down')?.value, 10) || 0;
+  const months = parseInt(document.getElementById('vf_finance_months')?.value, 10) || 48;
+  const rate = parseFloat(document.getElementById('vf_finance_rate')?.value) || 24;
+  const manualMonthly = document.getElementById('vf_finance_monthly')?.value.trim();
+  let monthly = manualMonthly ? parseInt(manualMonthly, 10) : null;
+  if (!monthly && window.TrustFinance && price > 0) {
+    monthly = TrustFinance.calcMonthlyPayment(price, down, months, rate);
+  }
+  return {
+    finance_enabled: document.getElementById('vf_finance_enabled')?.checked !== false,
+    finance_months: months,
+    finance_down_payment: down,
+    finance_annual_rate: rate,
+    finance_monthly: monthly,
+  };
+}
+
+function updateFinancePreview() {
+  const el = document.getElementById('vfFinancePreview');
+  if (!el || !window.TrustFinance) return;
+  const enabled = document.getElementById('vf_finance_enabled')?.checked !== false;
+  if (!enabled) {
+    el.textContent = 'Financiamiento oculto en la publicación.';
+    return;
+  }
+  const f = readFinanceFromForm();
+  if (!f.finance_monthly) {
+    el.textContent = 'Cuota referencial: ingresa precio y pulsa Calcular';
+    return;
+  }
+  el.textContent = `Cuota referencial: ${formatPrice(f.finance_monthly)} / mes (${f.finance_months} meses, pie ${formatPrice(f.finance_down_payment)})`;
+}
+
+function bindFinanceControls() {
+  const enabled = document.getElementById('vf_finance_enabled');
+  const fields = document.getElementById('vfFinanceFields');
+  const syncFields = () => {
+    const on = enabled?.checked !== false;
+    if (fields) fields.style.opacity = on ? '1' : '0.45';
+    fields?.querySelectorAll('input').forEach((inp) => { inp.disabled = !on; });
+    document.getElementById('vf_finance_monthly')?.toggleAttribute('disabled', !on);
+    document.getElementById('btnCalcFinance')?.toggleAttribute('disabled', !on);
+    updateFinancePreview();
+  };
+  enabled?.addEventListener('change', syncFields);
+  ['vf_price', 'vf_finance_down', 'vf_finance_months', 'vf_finance_rate', 'vf_finance_monthly'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', updateFinancePreview);
+  });
+  document.getElementById('btnCalcFinance')?.addEventListener('click', () => {
+    const price = parseInt(document.getElementById('vf_price')?.value, 10);
+    if (!price || !window.TrustFinance) return;
+    const down = parseInt(document.getElementById('vf_finance_down')?.value, 10) || 0;
+    const months = parseInt(document.getElementById('vf_finance_months')?.value, 10) || 48;
+    const rate = parseFloat(document.getElementById('vf_finance_rate')?.value) || 24;
+    const monthly = TrustFinance.calcMonthlyPayment(price, down, months, rate);
+    document.getElementById('vf_finance_monthly').value = monthly;
+    updateFinancePreview();
+  });
+  syncFields();
+  updateFinancePreview();
+}
+
 function openVehicleModal(vehicle = {}) {
   openModal(vehicle.id ? 'Editar Vehículo' : 'Nuevo Vehículo', vehicleFormHTML(vehicle), { wide: true });
   initVehicleImageManager(vehicle.images || []);
@@ -973,6 +1069,8 @@ function openVehicleModal(vehicle = {}) {
   ['vf_brand', 'vf_model', 'vf_year', 'vf_price', 'vf_description'].forEach((fid) => {
     document.getElementById(fid)?.addEventListener('input', updateVehicleLivePreview);
   });
+  document.getElementById('vf_price')?.addEventListener('input', updateFinancePreview);
+  bindFinanceControls();
   const form = document.getElementById('vehicleForm');
   form?.addEventListener('submit', saveVehicle);
 }
@@ -1037,6 +1135,7 @@ async function saveVehicle(e) {
     color1: document.getElementById('vf_color1').value,
     color2: document.getElementById('vf_color2').value,
     window_color: document.getElementById('vf_window_color').value,
+    ...readFinanceFromForm(),
   };
 
   try {
