@@ -75,6 +75,7 @@ Si todo está bien, verás ✅ **Deploy to cPanel (FTP)** en verde.
 
 | Error | Qué hacer |
 |-------|-----------|
+| **530 Login authentication failed** | Ver sección **Error 530** abajo |
 | Login incorrecto | Revisa usuario/contraseña FTP; en cPanel crea una cuenta FTP solo para deploy |
 | Ruta incorrecta | `CPANEL_REMOTE_DIR` debe ser la carpeta del dominio, con barras `/` |
 | Firewall | Algunos hostings exigen **IP fija** de GitHub Actions; en ese caso usa la **Opción B** (Git en cPanel) |
