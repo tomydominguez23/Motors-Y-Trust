@@ -28,7 +28,20 @@ GRANT SELECT ON dashboard_summary TO anon;
 GRANT SELECT ON sales_detail TO anon;
 GRANT SELECT ON monthly_sales TO anon;
 
--- Storage (crear bucket "vehicles" en UI: Storage → New bucket → Public)
+-- Bucket público para fotos de vehículos (se crea desde SQL; no hace falta la UI)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'vehicles',
+  'vehicles',
+  true,
+  10485760,
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']::text[]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
+
 DROP POLICY IF EXISTS "Temporal: lectura pública imágenes" ON storage.objects;
 CREATE POLICY "Temporal: lectura pública imágenes"
   ON storage.objects FOR SELECT USING (bucket_id = 'vehicles');
