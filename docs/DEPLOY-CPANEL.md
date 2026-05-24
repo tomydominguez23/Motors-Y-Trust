@@ -64,6 +64,12 @@ Si todo está bien, verás ✅ **Deploy to cPanel (FTP)** en verde.
 | Firewall | Algunos hostings exigen **IP fija** de GitHub Actions; en ese caso usa la **Opción B** (Git en cPanel) |
 | FTPS requerido | El workflow usa `protocol: ftps` y puerto `21` (explícito). Si falla, prueba `ftp` sin cifrado o puerto `990` con `ftps-legacy` |
 | Certificado TLS | Si el hosting usa certificado autofirmado, el workflow usa `security: loose` |
+| **500 en `/admin/` o `/js/`** | Suele ser `.htaccess` roto en el servidor o ModSecurity. Usa **`https://tudominio.cl/panel.html`** (panel en la raíz) y **`finance-utils.js`** en la raíz. Tras el deploy, borra en cPanel (Administrador de archivos) cualquier `.htaccess` corrupto dentro de `admin/` o `js/` si sigue el error. |
+
+### Panel y financiamiento en producción
+
+- Panel: **`/panel.html`** (recomendado si `/admin/` da error 500).
+- Cuota/crédito en publicaciones: requiere `finance-utils.js` en la raíz y columnas de financiamiento en Supabase (`sql/vehicles_financing.sql`).
 
 ---
 

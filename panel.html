@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=9">
+  <link rel="stylesheet" href="panel.css?v=1">
   <style>
     #adminLayout { display: flex !important; min-height: 100vh; }
     .pages-viewport { flex: 1; width: 100%; min-height: 50vh; }
@@ -35,7 +35,7 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <a href="../index.html" class="logo">
+        <a href="index.html" class="logo">
           <span class="logo-trust">TRUST</span>
           <span class="logo-motors">MOTORS</span>
         </a>
@@ -87,7 +87,7 @@
         </button>
         <h1 class="topbar-title" id="pageTitle">Dashboard</h1>
         <div class="topbar-actions">
-          <a href="../index.html" class="btn btn-outline btn-sm" target="_blank">
+          <a href="index.html" class="btn btn-outline btn-sm" target="_blank">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
             Ver Sitio
           </a>
@@ -361,7 +361,7 @@
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../finance-utils.js?v=1"></script>
+  <script src="finance-utils.js?v=1"></script>
   <script>
     (function () {
       var PAGE_MAP = {
@@ -485,6 +485,6 @@
       window.adminSwitchPage = switchPage;
     })();
   </script>
-  <script src="admin.js?v=11"></script>
+  <script src="panel.js?v=1"></script>
 </body>
 </html>
