@@ -5,6 +5,9 @@
    con los valores de tu proyecto en Supabase.
    ======================================== */
 
+/** Cambiar a true cuando quieras volver a exigir login */
+const REQUIRE_AUTH = false;
+
 const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 
@@ -13,25 +16,42 @@ if (!window.supabase) {
   throw new Error('Supabase JS no cargado');
 }
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    detectSessionInUrl: true,
+    autoRefreshToken: true,
+  },
+});
 
 /* ── Helpers ─────────────────────────── */
 
 function formatAuthError(error) {
   if (!error) return 'No se pudo iniciar sesión. Intenta nuevamente.';
   const msg = error.message || '';
+  const code = error.code || '';
 
-  if (msg.includes('Invalid login credentials')) {
-    return 'Email o contraseña incorrectos. El acceso al panel usa usuarios de Supabase → Authentication → Users (no la tabla «clientes»). Crea el usuario ahí con contraseña o márcalo como confirmado.';
+  if (code === 'email_not_confirmed' || msg.includes('Email not confirmed')) {
+    return 'Tu email aún no está confirmado. En Supabase: Authentication → Users → clic en tu usuario → «Confirm user». O usa «Enviar enlace al correo» abajo.';
   }
-  if (msg.includes('Email not confirmed')) {
-    return 'Debes confirmar tu correo antes de entrar. Revisa tu bandeja de entrada o, en Supabase, desactiva «Confirm email» en Authentication → Providers → Email.';
+  if (msg.includes('Invalid login credentials')) {
+    return 'Contraseña incorrecta, email sin confirmar, o usuario creado por invitación sin contraseña. Prueba «Restablecer contraseña» o «Enviar enlace al correo».';
   }
   if (msg.includes('User not found')) {
-    return 'No hay ningún usuario con ese email en Authentication. Créalo en Supabase → Authentication → Users.';
+    return 'No hay ningún usuario con ese email en Authentication.';
   }
 
   return msg;
+}
+
+function getLoginEmail() {
+  return document.getElementById('loginEmail').value.trim().toLowerCase();
+}
+
+function setLoginMessage(text, isSuccess = false) {
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = text;
+  errEl.style.color = isSuccess ? 'var(--success)' : 'var(--danger)';
 }
 
 function formatPrice(n) {
@@ -73,42 +93,105 @@ document.getElementById('adminModal').addEventListener('click', e => {
 
 /* ── Auth ────────────────────────────── */
 
+function initAdminPanel() {
+  showAdmin();
+  loadDashboard();
+}
+
 async function checkSession() {
+  if (!REQUIRE_AUTH) {
+    initAdminPanel();
+    return;
+  }
+
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    showAdmin();
-    loadDashboard();
+    initAdminPanel();
   } else {
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('adminLayout').style.display = 'none';
   }
 }
 
+function setupAuth() {
+  if (!REQUIRE_AUTH) return;
+
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value;
+  const email = getLoginEmail();
   const password = document.getElementById('loginPassword').value;
-  const errEl = document.getElementById('loginError');
-  errEl.textContent = '';
+  setLoginMessage('');
+
+  if (!email) {
+    setLoginMessage('Ingresa tu email.');
+    return;
+  }
 
   const btn = e.target.querySelector('button[type="submit"]');
   btn.disabled = true;
   btn.textContent = 'Ingresando...';
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.trim(),
-    password,
-  });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   btn.disabled = false;
   btn.textContent = 'Iniciar Sesión';
 
   if (error) {
-    errEl.textContent = formatAuthError(error);
-    console.error('Login error:', error.message, error);
+    setLoginMessage(formatAuthError(error));
+    console.error('Login error:', error.code, error.message);
+    return;
+  }
+
+  if (!data.session) {
+    setLoginMessage('No se pudo crear la sesión. Confirma tu email en Supabase o usa el enlace mágico.');
+    return;
+  }
+
+  initAdminPanel();
+});
+
+document.getElementById('btnResetPassword').addEventListener('click', async () => {
+  const email = getLoginEmail();
+  if (!email) {
+    setLoginMessage('Escribe tu email arriba y luego pulsa Restablecer contraseña.');
+    return;
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href.split('#')[0],
+  });
+
+  if (error) {
+    setLoginMessage(formatAuthError(error));
   } else {
-    showAdmin();
-    loadDashboard();
+    setLoginMessage(`Te enviamos un correo a ${email} para crear o cambiar tu contraseña.`, true);
+  }
+});
+
+document.getElementById('btnMagicLink').addEventListener('click', async () => {
+  const email = getLoginEmail();
+  if (!email) {
+    setLoginMessage('Escribe tu email arriba y luego pulsa Enviar enlace al correo.');
+    return;
+  }
+
+  const btn = document.getElementById('btnMagicLink');
+  btn.disabled = true;
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: window.location.href.split('#')[0],
+    },
+  });
+
+  btn.disabled = false;
+
+  if (error) {
+    setLoginMessage(formatAuthError(error));
+  } else {
+    setLoginMessage(`Revisa ${email}: te enviamos un enlace para entrar sin contraseña.`, true);
   }
 });
 
@@ -118,9 +201,15 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
   document.getElementById('adminLayout').style.display = 'none';
 });
 
+} // setupAuth
+
 function showAdmin() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminLayout').style.display = 'flex';
+  const banner = document.getElementById('authWarningBanner');
+  if (banner) banner.style.display = REQUIRE_AUTH ? 'none' : 'block';
+  const logoutBtn = document.getElementById('btnLogout');
+  if (logoutBtn) logoutBtn.style.display = REQUIRE_AUTH ? '' : 'none';
 }
 
 /* ── Navigation ──────────────────────── */
@@ -993,11 +1082,13 @@ function debounce(fn, ms) {
 
 /* ── Init ────────────────────────────── */
 
-supabase.auth.onAuthStateChange((_event, session) => {
-  if (session) {
-    showAdmin();
-    loadDashboard();
-  }
-});
-
-checkSession();
+if (REQUIRE_AUTH) {
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) initAdminPanel();
+  });
+  setupAuth();
+  checkSession();
+} else {
+  setupAuth();
+  initAdminPanel();
+}

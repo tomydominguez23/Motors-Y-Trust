@@ -87,6 +87,26 @@ table { border-collapse: collapse; width: 100%; }
 }
 .login-hint strong { color: var(--text-light); font-weight: 600; }
 
+.login-alt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem .5rem;
+  margin-top: .25rem;
+}
+.login-alt-sep { color: var(--text-muted); font-size: .8rem; }
+.btn-link {
+  padding: 0;
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: underline;
+  background: none;
+}
+.btn-link:hover { color: var(--primary); }
+.btn-link:disabled { opacity: .5; cursor: not-allowed; }
+
 .form-group { display: flex; flex-direction: column; gap: .3rem; }
 .form-group label { font-size: .8rem; font-weight: 600; color: var(--text); }
 .form-group input,
@@ -156,6 +176,23 @@ table { border-collapse: collapse; width: 100%; }
 .topbar-title { font-size: 1.15rem; font-weight: 700; flex: 1; }
 .topbar-toggle { display: none; }
 .topbar-actions { display: flex; gap: .5rem; }
+
+.auth-warning-banner {
+  margin: 0 1.5rem 1rem;
+  padding: .65rem 1rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+.auth-warning-banner code {
+  font-size: .78rem;
+  background: rgba(0,0,0,.06);
+  padding: .1rem .35rem;
+  border-radius: 4px;
+}
 
 /* ── Pages ───────────────────────────── */
 

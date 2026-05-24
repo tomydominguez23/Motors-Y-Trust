@@ -26,9 +26,17 @@ Abrir `index.html` en un navegador. No requiere servidor ni dependencias externa
 
 El enlace **Panel de administración** está en el pie de página (`admin/`).
 
-### Acceso al panel admin (Supabase Auth)
+### Panel admin sin login (temporal)
 
-El login del panel usa **Supabase Authentication**, no la tabla `customers`:
+Por defecto el panel abre **sin pedir contraseña** (`REQUIRE_AUTH = false` en `admin/admin.js`).
+
+Para que Supabase permita guardar datos sin sesión, ejecuta una vez `sql/open_admin_no_auth.sql` en el SQL Editor.
+
+Cuando quieras proteger el panel de nuevo, cambia `REQUIRE_AUTH` a `true` y elimina las políticas «Temporal: anon …» en Supabase.
+
+### Acceso al panel admin con login (Supabase Auth)
+
+Con `REQUIRE_AUTH = true`, el login usa **Supabase Authentication**, no la tabla `customers`:
 
 1. En el dashboard de Supabase: **Authentication → Users → Add user**
 2. Indica email y contraseña, y activa **Auto Confirm User** (o confirma el correo manualmente)
