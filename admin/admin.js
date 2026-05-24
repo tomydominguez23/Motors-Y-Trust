@@ -5,8 +5,8 @@
    con los valores de tu proyecto en Supabase.
    ======================================== */
 
-const SUPABASE_URL = 'TU_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
