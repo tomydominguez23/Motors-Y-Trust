@@ -2,8 +2,8 @@
 
 | Archivo | Uso |
 |---------|-----|
-| `hero-eclipse-cross.jpg` | Hero del inicio (Mitsubishi Eclipse Cross 1.5) |
+| `hero-eclipse-cross.jpg` | Respaldo local si no hay foto en Supabase |
 
-Puedes reemplazar `hero-eclipse-cross.jpg` por tu propia foto del vehículo (misma ruta y nombre) y subirla a cPanel en la carpeta `images/`.
+**Recomendado:** Panel → **Imágenes sitio** → **Auto del inicio (hero)** → Subir → Guardar.
 
-La imagen por defecto proviene de Wikimedia Commons (CC BY-SA 4.0, Vauxford).
+SQL en Supabase: `sql/site_imagenes_hero.sql`

@@ -291,6 +291,19 @@ body.admin-requires-auth #adminLayout { display: none !important; }
   overflow: hidden;
   box-shadow: var(--shadow-sm);
 }
+.site-media-card--featured {
+  grid-column: 1 / -1;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+.site-media-card--featured .site-media-preview {
+  height: 200px;
+}
+.site-media-card--featured .site-media-preview img {
+  max-height: 190px;
+  object-fit: cover;
+  width: 100%;
+}
 .site-media-preview {
   height: 140px;
   background: var(--bg);

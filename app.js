@@ -520,10 +520,13 @@ async function applySiteSettings() {
     });
   }
 
-  if (settings.hero_banner) {
-    const showcase = document.querySelector('.hero-car-showcase');
-    if (showcase) {
-      showcase.innerHTML = `<img src="${settings.hero_banner}" alt="Mitsubishi Eclipse Cross RX 1.5" class="hero-car-photo hero-banner-img" loading="eager">`;
+  const heroCarUrl = settings.hero_car || settings.hero_banner;
+  const showcase = document.querySelector('.hero-car-showcase');
+  if (showcase) {
+    if (heroCarUrl) {
+      showcase.innerHTML = `<img src="${heroCarUrl}" alt="Vehículo destacado Trust Motors" class="hero-car-photo hero-banner-img" loading="eager">`;
+    } else if (!showcase.querySelector('.hero-car-photo')) {
+      showcase.innerHTML = `<img src="images/hero-eclipse-cross.jpg" alt="Mitsubishi Eclipse Cross RX 1.5" class="hero-car-photo" loading="eager">`;
     }
   }
 

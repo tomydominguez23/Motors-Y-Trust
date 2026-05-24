@@ -1207,8 +1207,13 @@ let siteBucketReady = null;
 const SITE_ASSET_DEFS = [
   { key: 'logo_header', label: 'Logo (cabecera)', hint: 'PNG o SVG, fondo transparente. Altura ~40px.' },
   { key: 'logo_footer', label: 'Logo (pie de página)', hint: 'Versión para el footer.' },
-  { key: 'hero_banner', label: 'Banner principal (hero)', hint: 'Imagen grande del inicio (JPG/WebP).' },
-  { key: 'hero_background', label: 'Fondo del hero', hint: 'Imagen de fondo opcional detrás del texto.' },
+  {
+    key: 'hero_car',
+    label: 'Auto del inicio (hero)',
+    hint: 'Foto del vehículo a la derecha del inicio (ej. Eclipse Cross). JPG/WebP horizontal.',
+    featured: true,
+  },
+  { key: 'hero_background', label: 'Fondo del hero', hint: 'Imagen de fondo opcional detrás del texto del inicio.' },
   { key: 'about_image', label: 'Imagen «Nosotros»', hint: 'Foto o banner de la sección Sobre Nosotros.' },
 ];
 
@@ -1227,7 +1232,7 @@ async function loadSiteMedia() {
 
   const { data, error } = await sb.from('site_settings').select('key, value');
   if (error) {
-    grid.innerHTML = `<div class="site-media-error">No se pudo leer site_settings: ${escapeHtml(error.message)}. Ejecuta <code>sql/setup_completo.sql</code> en Supabase.</div>`;
+    grid.innerHTML = `<div class="site-media-error">No se pudo leer site_settings: ${escapeHtml(error.message)}. Ejecuta <code>sql/site_imagenes_hero.sql</code> en Supabase.</div>`;
     return;
   }
 
@@ -1237,12 +1242,13 @@ async function loadSiteMedia() {
   const bucketOk = await isSiteBucketReady();
 
   grid.innerHTML = SITE_ASSET_DEFS.map((def) => {
-    const url = map[def.key] || '';
+    const url = map[def.key] || (def.key === 'hero_car' ? map.hero_banner : '') || '';
     const preview = url
       ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(def.label)}">`
       : '<div class="site-media-placeholder">Sin imagen</div>';
+    const featuredClass = def.featured ? ' site-media-card--featured' : '';
     return `
-      <article class="site-media-card" data-asset-key="${escapeHtml(def.key)}">
+      <article class="site-media-card${featuredClass}" data-asset-key="${escapeHtml(def.key)}">
         <div class="site-media-preview">${preview}</div>
         <div class="site-media-body">
           <h3>${escapeHtml(def.label)}</h3>
@@ -1253,6 +1259,7 @@ async function loadSiteMedia() {
             <button type="button" class="btn btn-outline btn-sm btn-site-upload" ${bucketOk ? '' : 'disabled title="Ejecuta setup_completo.sql"'}>Subir</button>
             <input type="url" class="site-asset-url-input" placeholder="https://…" value="${escapeHtml(url)}">
             <button type="button" class="btn btn-primary btn-sm btn-site-save">Guardar</button>
+            <button type="button" class="btn btn-outline btn-sm btn-site-clear" title="Volver a imagen por defecto del servidor">Quitar</button>
           </div>
         </div>
       </article>
@@ -1305,24 +1312,37 @@ function bindSiteMediaCard(card) {
     }
   });
 
-  saveBtn?.addEventListener('click', async () => {
-    const value = urlInput.value.trim();
+  saveBtn?.addEventListener('click', async () => saveSiteMediaUrl(card, key, urlInput.value.trim()));
+
+  card.querySelector('.btn-site-clear')?.addEventListener('click', async () => {
+    await saveSiteMediaUrl(card, key, '');
+  });
+}
+
+async function saveSiteMediaUrl(card, key, value) {
+  const saveBtn = card.querySelector('.btn-site-save');
+  const urlInput = card.querySelector('.site-asset-url-input');
+  const hiddenUrl = card.querySelector('.site-asset-url');
+  if (saveBtn) {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Guardando…';
-    const { error } = await sb.from('site_settings').upsert(
-      { key, value, updated_at: new Date().toISOString() },
-      { onConflict: 'key' }
-    );
+  }
+  const { error } = await sb.from('site_settings').upsert(
+    { key, value, updated_at: new Date().toISOString() },
+    { onConflict: 'key' }
+  );
+  if (saveBtn) {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Guardar';
-    if (error) {
-      showToast('Error: ' + error.message, 'error');
-      return;
-    }
-    hiddenUrl.value = value;
-    updateSiteMediaPreview(card, value);
-    showToast('Imagen del sitio actualizada', 'success');
-  });
+  }
+  if (error) {
+    showToast('Error: ' + error.message, 'error');
+    return;
+  }
+  if (urlInput) urlInput.value = value;
+  if (hiddenUrl) hiddenUrl.value = value;
+  updateSiteMediaPreview(card, value);
+  showToast(value ? 'Imagen publicada en la web' : 'Imagen quitada (se usa la del servidor)', 'success');
 }
 
 function updateSiteMediaPreview(card, url) {

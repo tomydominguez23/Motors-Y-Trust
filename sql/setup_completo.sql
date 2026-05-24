@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS site_settings (
 INSERT INTO site_settings (key, value) VALUES
   ('logo_header', ''),
   ('logo_footer', ''),
+  ('hero_car', ''),
   ('hero_banner', ''),
   ('hero_background', ''),
   ('about_image', '')
@@ -78,7 +79,7 @@ DROP POLICY IF EXISTS "Temporal: anon site_settings" ON site_settings;
 CREATE POLICY "Temporal: anon site_settings"
   ON site_settings FOR ALL TO anon USING (true) WITH CHECK (true);
 
-GRANT SELECT ON site_settings TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON site_settings TO anon;
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
