@@ -166,7 +166,12 @@ const fallbackVehicles = [
 let allVehicles = [];
 
 async function fetchVehicles() {
-  if (USE_SUPABASE && supabaseClient) {
+  if (!USE_SUPABASE || !supabaseClient) {
+    allVehicles = fallbackVehicles;
+    return;
+  }
+
+  try {
     const { data, error } = await supabaseClient
       .from('vehicles')
       .select('*')
@@ -174,12 +179,23 @@ async function fetchVehicles() {
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
+    if (error) {
+      console.warn('Trust Motors: error cargando vehículos desde Supabase', error.message);
+      allVehicles = fallbackVehicles;
+      return;
+    }
+
+    if (Array.isArray(data) && data.length > 0) {
       allVehicles = data;
       return;
     }
+
+    console.warn('Trust Motors: no hay vehículos con status disponible en Supabase');
+    allVehicles = [];
+  } catch (err) {
+    console.warn('Trust Motors: fallo de red Supabase', err);
+    allVehicles = fallbackVehicles;
   }
-  allVehicles = fallbackVehicles;
 }
 
 async function submitInquiry(vehicleId, name, phone, email, message) {
@@ -297,36 +313,56 @@ function renderVehicles() {
   const grid = document.getElementById('vehiclesGrid');
   const emptyState = document.getElementById('vehiclesEmpty');
   const loadMoreBtn = document.getElementById('btnLoadMore');
+  const loadingEl = document.getElementById('vehiclesLoading');
+  if (!grid) return;
+
+  if (loadingEl) loadingEl.style.display = 'none';
   grid.innerHTML = '';
 
   const filtered = getFilteredVehicles();
   const toShow = filtered.slice(0, visibleCount);
 
   if (filtered.length === 0) {
-    emptyState.style.display = 'block';
-    loadMoreBtn.style.display = 'none';
+    if (emptyState) {
+      const msg = emptyState.querySelector('p');
+      if (msg) {
+        msg.textContent = allVehicles.length === 0
+          ? 'No hay vehículos publicados en este momento. Vuelve a intentar en unos minutos o contáctanos por WhatsApp.'
+          : 'No se encontraron vehículos con esos filtros';
+      }
+      emptyState.style.display = 'block';
+    }
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
   } else {
-    emptyState.style.display = 'none';
-    toShow.forEach(v => grid.appendChild(createVehicleCard(v)));
-    loadMoreBtn.style.display = filtered.length > visibleCount ? 'inline-flex' : 'none';
+    if (emptyState) emptyState.style.display = 'none';
+    toShow.forEach((v) => {
+      try {
+        grid.appendChild(createVehicleCard(v));
+      } catch (cardErr) {
+        console.error('Error al mostrar vehículo', v?.id, cardErr);
+      }
+    });
+    if (loadMoreBtn) {
+      loadMoreBtn.style.display = filtered.length > visibleCount ? 'inline-flex' : 'none';
+    }
   }
 }
 
-/* ── Sort Buttons ───────────────────── */
-
-document.querySelectorAll('.sort-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.sort;
-    visibleCount = 8;
-    renderVehicles();
+function bindUiHandlers() {
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.sort;
+      visibleCount = 8;
+      renderVehicles();
+    });
   });
-});
 
-/* ── Search Bar ─────────────────────── */
+  const btnSearch = document.getElementById('btnSearch');
+  if (!btnSearch) return;
 
-document.getElementById('btnSearch').addEventListener('click', () => {
+  btnSearch.addEventListener('click', () => {
   currentBrand = document.getElementById('filterBrand').value;
   currentType = document.getElementById('filterType').value;
   currentMaxPrice = document.getElementById('filterPrice').value;
@@ -346,10 +382,10 @@ document.getElementById('btnSearch').addEventListener('click', () => {
 
   visibleCount = 8;
   renderVehicles();
-  document.getElementById('vehiculos').scrollIntoView({ behavior: 'smooth' });
-});
+  document.getElementById('vehiculos')?.scrollIntoView({ behavior: 'smooth' });
+  });
 
-document.getElementById('btnClearFilters').addEventListener('click', () => {
+  document.getElementById('btnClearFilters')?.addEventListener('click', () => {
   currentFilter = 'all';
   currentBrand = '';
   currentType = '';
@@ -364,12 +400,68 @@ document.getElementById('btnClearFilters').addEventListener('click', () => {
   });
   visibleCount = 8;
   renderVehicles();
-});
+  });
 
-document.getElementById('btnLoadMore').addEventListener('click', () => {
-  visibleCount += 4;
-  renderVehicles();
-});
+  document.getElementById('btnLoadMore')?.addEventListener('click', () => {
+    visibleCount += 4;
+    renderVehicles();
+  });
+
+  document.getElementById('modalClose')?.addEventListener('click', closeModal);
+  document.getElementById('modalClose2')?.addEventListener('click', closeModal);
+  document.getElementById('vehicleModal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  window.addEventListener('scroll', () => {
+    document.getElementById('header')?.classList.toggle('scrolled', window.scrollY > 20);
+    const scrollY = window.scrollY + 100;
+    document.querySelectorAll('section[id]').forEach((section) => {
+      const top = section.offsetTop;
+      const height = section.offsetHeight;
+      const id = section.getAttribute('id');
+      const link = document.querySelector(`.nav-link[href="#${id}"]`);
+      if (link) {
+        link.classList.toggle('active', scrollY >= top && scrollY < top + height);
+      }
+    });
+  });
+
+  document.getElementById('hamburger')?.addEventListener('click', () => {
+    document.getElementById('hamburger')?.classList.toggle('active');
+    document.getElementById('nav')?.classList.toggle('open');
+  });
+
+  document.querySelectorAll('.nav-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      document.getElementById('hamburger')?.classList.remove('active');
+      document.getElementById('nav')?.classList.remove('open');
+    });
+  });
+
+  document.getElementById('contactForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name')?.value;
+    const phone = document.getElementById('phone')?.value;
+    const email = document.getElementById('email')?.value;
+    const message = document.getElementById('message')?.value;
+
+    await submitInquiry(null, name, phone, email, message);
+
+    const msg = encodeURIComponent(
+      `Hola Trust Motors, soy ${name}.\n` +
+      `${message ? 'Mensaje: ' + message + '\n' : ''}` +
+      `${email ? 'Email: ' + email + '\n' : ''}` +
+      `Teléfono: ${phone}`
+    );
+
+    window.open(`https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${msg}`, '_blank');
+    e.target.reset();
+  });
+}
 
 /* ── Modal ──────────────────────────── */
 
@@ -442,76 +534,9 @@ function openModal(vehicle) {
 }
 
 function closeModal() {
-  document.getElementById('vehicleModal').classList.remove('active');
+  document.getElementById('vehicleModal')?.classList.remove('active');
   document.body.style.overflow = '';
 }
-
-document.getElementById('modalClose').addEventListener('click', closeModal);
-document.getElementById('modalClose2').addEventListener('click', closeModal);
-document.getElementById('vehicleModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeModal();
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
-});
-
-/* ── Header Scroll ──────────────────── */
-
-window.addEventListener('scroll', () => {
-  document.getElementById('header').classList.toggle('scrolled', window.scrollY > 20);
-});
-
-/* ── Hamburger ──────────────────────── */
-
-document.getElementById('hamburger').addEventListener('click', () => {
-  document.getElementById('hamburger').classList.toggle('active');
-  document.getElementById('nav').classList.toggle('open');
-});
-
-document.querySelectorAll('.nav-link').forEach(link => {
-  link.addEventListener('click', () => {
-    document.getElementById('hamburger').classList.remove('active');
-    document.getElementById('nav').classList.remove('open');
-  });
-});
-
-/* ── Active Nav Link on Scroll ──────── */
-
-const sections = document.querySelectorAll('section[id]');
-window.addEventListener('scroll', () => {
-  const scrollY = window.scrollY + 100;
-  sections.forEach(section => {
-    const top = section.offsetTop;
-    const height = section.offsetHeight;
-    const id = section.getAttribute('id');
-    const link = document.querySelector(`.nav-link[href="#${id}"]`);
-    if (link) {
-      link.classList.toggle('active', scrollY >= top && scrollY < top + height);
-    }
-  });
-});
-
-/* ── Contact Form ───────────────────── */
-
-document.getElementById('contactForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const name = document.getElementById('name').value;
-  const phone = document.getElementById('phone').value;
-  const email = document.getElementById('email').value;
-  const message = document.getElementById('message').value;
-
-  await submitInquiry(null, name, phone, email, message);
-
-  const msg = encodeURIComponent(
-    `Hola Trust Motors, soy ${name}.\n` +
-    `${message ? 'Mensaje: ' + message + '\n' : ''}` +
-    `${email ? 'Email: ' + email + '\n' : ''}` +
-    `Teléfono: ${phone}`
-  );
-
-  window.open(`https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${msg}`, '_blank');
-  e.target.reset();
-});
 
 /* ── Site images (logo, banners) ─────── */
 
@@ -556,8 +581,14 @@ async function applySiteSettings() {
 /* ── Init ────────────────────────────── */
 
 async function init() {
-  await Promise.all([fetchVehicles(), applySiteSettings()]);
+  bindUiHandlers();
+  await fetchVehicles();
   renderVehicles();
+  applySiteSettings().catch((err) => console.warn('Trust Motors: site_settings', err));
 }
 
-init();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => { init(); });
+} else {
+  init();
+}

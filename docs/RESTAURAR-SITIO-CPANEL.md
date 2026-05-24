@@ -18,7 +18,7 @@ Si borraste archivos en el **Administrador de archivos** y la web quedó en blan
 1. cPanel → **Cuentas FTP**.
 2. Busca la cuenta que usa el deploy (ej. `Admin@trustmotors.cl`).
 3. Clic en **Cambiar directorio** / **Change Directory**.
-4. Asígnala a **`public_html`** (o la carpeta que creaste en el paso 1).
+4. Asígnala a **`public_html/ditecnoc/trustmotors.cl`** (carpeta del dominio Trust Motors en Ditecno).
 5. Si la cuenta quedó rota, puedes **eliminarla y crearla de nuevo** apuntando a `public_html`.
 
 Sin esto, GitHub Actions no podrá subir archivos (error 530).
@@ -55,8 +55,8 @@ Sin esto, GitHub Actions no podrá subir archivos (error 530).
 
 Secret `CPANEL_REMOTE_DIR` en GitHub:
 
-| Si al conectar por FTP entras directo en `public_html` | Usa `/` |
-| Si entras en la raíz del usuario y ves la carpeta `public_html` | Usa `/public_html/` |
+| Si la cuenta FTP apunta a `public_html/ditecnoc/trustmotors.cl` | Usa **`/`** |
+| Si entras en la raíz del usuario y ves `public_html/ditecnoc/trustmotors.cl` | Usa **`/public_html/ditecnoc/trustmotors.cl/`** |
 
 ---
 

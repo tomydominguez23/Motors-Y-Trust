@@ -34,9 +34,25 @@ Crea estos secrets (nombres exactos):
 | `CPANEL_FTP_USERNAME` | Usuario FTP completo, ej. `Admin@trustmotors.cl` |
 | `CPANEL_FTP_PASSWORD` | Contraseña FTP (solo en secret, nunca en el repo) |
 | `CPANEL_FTP_PORT` | `21` para FTPS explícito (opcional; si no existe, usa 21) |
-| `CPANEL_REMOTE_DIR` | Ruta remota, ej. `/public_html/` (con `/` al final) |
+| `CPANEL_REMOTE_DIR` | Ver tabla abajo según cómo configuraste la cuenta FTP |
 
-**Trust Motors (Ditecno):** host `ftp.ditecno.cl`, usuario `Admin@trustmotors.cl`, puerto `21`, protocolo **FTPS explícito** (ya configurado en el workflow). La contraseña va únicamente en el secret `CPANEL_FTP_PASSWORD`.
+**Trust Motors (Ditecno):**
+
+| Secret | Valor |
+|--------|--------|
+| `CPANEL_FTP_HOST` | `ftp.ditecno.cl` |
+| `CPANEL_FTP_USERNAME` | `Admin@trustmotors.cl` |
+| `CPANEL_FTP_PORT` | `21` |
+| `CPANEL_FTP_PASSWORD` | Tu contraseña FTP |
+
+**`CPANEL_REMOTE_DIR` (muy importante):**
+
+| Configuración en cPanel → Cuentas FTP → Directorio de la cuenta | Valor del secret |
+|----------------------------------------------------------------|------------------|
+| Apunta a **`public_html/ditecnoc/trustmotors.cl`** (recomendado) | **`/`** |
+| Apunta a la raíz del usuario y subes a mano a la subcarpeta | **`/public_html/ditecnoc/trustmotors.cl/`** |
+
+Si la cuenta FTP ya abre directamente la carpeta de **trustmotors.cl**, usa **`/`**. Si usas `/public_html/...` cuando la cuenta ya está en esa carpeta, los archivos se suben a una ruta incorrecta o el deploy falla.
 
 ### 3. Activar el workflow
 
