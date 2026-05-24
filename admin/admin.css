@@ -185,10 +185,10 @@ body.admin-requires-auth #adminLayout { display: none !important; }
 
 .auth-warning-banner {
   margin: 0 1.5rem 1rem;
-  padding: .65rem 1rem;
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
+  padding: .75rem 1rem;
+  background: #f8fafc;
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: .82rem;
   line-height: 1.45;
@@ -199,6 +199,12 @@ body.admin-requires-auth #adminLayout { display: none !important; }
   padding: .1rem .35rem;
   border-radius: 4px;
 }
+.banner-note { margin-top: .5rem; color: var(--text-light); font-size: .78rem; }
+.supabase-status { font-weight: 600; }
+.supabase-status.pending { color: var(--text-light); }
+.supabase-status.ok { color: var(--success); }
+.supabase-status.warn { color: var(--warning); }
+.supabase-status.error { color: var(--danger); }
 
 /* ── Pages ───────────────────────────── */
 

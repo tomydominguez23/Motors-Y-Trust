@@ -45,11 +45,13 @@ function formatAuthError(error) {
 }
 
 function getLoginEmail() {
-  return document.getElementById('loginEmail').value.trim().toLowerCase();
+  const input = document.getElementById('loginEmail');
+  return input ? input.value.trim().toLowerCase() : '';
 }
 
 function setLoginMessage(text, isSuccess = false) {
   const errEl = document.getElementById('loginError');
+  if (!errEl) return;
   errEl.textContent = text;
   errEl.style.color = isSuccess ? 'var(--success)' : 'var(--danger)';
 }
@@ -96,6 +98,33 @@ document.getElementById('adminModal').addEventListener('click', e => {
 function initAdminPanel() {
   showAdmin();
   loadDashboard();
+  updateSupabaseStatus();
+}
+
+async function updateSupabaseStatus() {
+  const el = document.getElementById('supabaseStatus');
+  if (!el) return;
+
+  el.textContent = 'Comprobando conexión con Supabase…';
+  el.className = 'supabase-status pending';
+
+  const { error: tableError } = await supabase.from('vehicles').select('id').limit(1);
+  if (tableError) {
+    el.textContent = `Error Supabase: ${tableError.message}. Ejecuta sql/open_admin_no_auth.sql en el SQL Editor.`;
+    el.className = 'supabase-status error';
+    showToast('Sin permisos en Supabase. Ejecuta open_admin_no_auth.sql', 'error');
+    return;
+  }
+
+  const { error: viewError } = await supabase.from('dashboard_summary').select('*').single();
+  if (viewError) {
+    el.textContent = `Conectado, pero falta la vista dashboard: ${viewError.message}`;
+    el.className = 'supabase-status warn';
+    return;
+  }
+
+  el.textContent = 'Supabase conectado correctamente';
+  el.className = 'supabase-status ok';
 }
 
 function setAuthMode(requiresAuth) {
@@ -122,7 +151,10 @@ async function checkSession() {
 function setupAuth() {
   if (!REQUIRE_AUTH) return;
 
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  const loginForm = document.getElementById('loginForm');
+  if (!loginForm) return;
+
+loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = getLoginEmail();
   const password = document.getElementById('loginPassword').value;
@@ -156,7 +188,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   initAdminPanel();
 });
 
-document.getElementById('btnResetPassword').addEventListener('click', async () => {
+document.getElementById('btnResetPassword')?.addEventListener('click', async () => {
   const email = getLoginEmail();
   if (!email) {
     setLoginMessage('Escribe tu email arriba y luego pulsa Restablecer contraseña.');
@@ -174,7 +206,7 @@ document.getElementById('btnResetPassword').addEventListener('click', async () =
   }
 });
 
-document.getElementById('btnMagicLink').addEventListener('click', async () => {
+document.getElementById('btnMagicLink')?.addEventListener('click', async () => {
   const email = getLoginEmail();
   if (!email) {
     setLoginMessage('Escribe tu email arriba y luego pulsa Enviar enlace al correo.');
@@ -201,7 +233,7 @@ document.getElementById('btnMagicLink').addEventListener('click', async () => {
   }
 });
 
-document.getElementById('btnLogout').addEventListener('click', async () => {
+document.getElementById('btnLogout')?.addEventListener('click', async () => {
   await supabase.auth.signOut();
   setAuthMode(true);
   const loginEl = document.getElementById('loginScreen');
@@ -212,13 +244,10 @@ document.getElementById('btnLogout').addEventListener('click', async () => {
 } // setupAuth
 
 function showAdmin() {
-  const loginEl = document.getElementById('loginScreen');
-  if (loginEl) loginEl.hidden = true;
-  document.getElementById('adminLayout').style.display = 'flex';
+  const layout = document.getElementById('adminLayout');
+  if (layout) layout.style.display = 'flex';
   const banner = document.getElementById('authWarningBanner');
-  if (banner) banner.style.display = REQUIRE_AUTH ? 'none' : 'block';
-  const logoutBtn = document.getElementById('btnLogout');
-  if (logoutBtn) logoutBtn.style.display = REQUIRE_AUTH ? '' : 'none';
+  if (banner) banner.style.display = 'block';
 }
 
 /* ── Navigation ──────────────────────── */
@@ -1091,14 +1120,19 @@ function debounce(fn, ms) {
 
 /* ── Init ────────────────────────────── */
 
-if (REQUIRE_AUTH) {
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (session) initAdminPanel();
-  });
-  setupAuth();
-  checkSession();
-} else {
-  setAuthMode(false);
-  setupAuth();
-  initAdminPanel();
+try {
+  if (REQUIRE_AUTH) {
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) initAdminPanel();
+    });
+    setupAuth();
+    checkSession();
+  } else {
+    initAdminPanel();
+  }
+} catch (err) {
+  console.error(err);
+  const layout = document.getElementById('adminLayout');
+  if (layout) layout.style.display = 'flex';
+  showToast('Error al iniciar el panel: ' + err.message, 'error');
 }
