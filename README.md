@@ -26,6 +26,14 @@ Abrir `index.html` en un navegador. No requiere servidor ni dependencias externa
 
 El enlace **Panel de administración** está en el pie de página (`admin/`).
 
+## Despliegue automático a cPanel (GitHub → hosting)
+
+Para que cada cambio en `main` se publique solo en tu cPanel:
+
+1. Lee la guía **[docs/DEPLOY-CPANEL.md](docs/DEPLOY-CPANEL.md)**
+2. Configura los **secrets** de FTP en GitHub (`CPANEL_FTP_HOST`, `CPANEL_FTP_USERNAME`, etc.)
+3. El workflow `.github/workflows/deploy-cpanel.yml` sube el sitio al hacer merge/push a `main`
+
 ### Panel admin sin login (temporal)
 
 Por defecto el panel abre **sin pedir contraseña** (`REQUIRE_AUTH = false` en `admin/admin.js`).
