@@ -1,0 +1,24 @@
+# Trust Motors — sitio estático (cPanel / Apache)
+DirectoryIndex index.html index.htm
+
+Options -Indexes +FollowSymLinks -MultiViews
+
+# No usar ErrorDocument 500 (evita bucles de error en algunos hostings)
+ErrorDocument 404 /index.html
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Desactivar PHP en HTML estático si el servidor lo inyecta
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+  php_flag engine off
+</IfModule>

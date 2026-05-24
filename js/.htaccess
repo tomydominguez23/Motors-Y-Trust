@@ -1,0 +1,11 @@
+# Permitir servir JS estático en subcarpeta js/
+Options -Indexes +FollowSymLinks
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+  php_flag engine off
+</IfModule>

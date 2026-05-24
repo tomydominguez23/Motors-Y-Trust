@@ -24,7 +24,7 @@ Sitio web minimalista para **Trust Motors**, automotora de confianza.
 
 Abrir `index.html` en un navegador. No requiere servidor ni dependencias externas.
 
-El enlace **Panel de administración** está en el pie de página (`admin/`).
+El enlace **Panel de administración** está en el pie de página (`panel.html`). Si tu hosting bloquea la carpeta `admin/`, usa siempre `panel.html`.
 
 ## Despliegue automático a cPanel (GitHub → hosting)
 

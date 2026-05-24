@@ -10,6 +10,36 @@ const SUPABASE_URL = 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
 const WHATSAPP_NUMBER = '56948406684';
 
+/** Respaldo si finance-utils.js no carga (p. ej. carpeta /js/ con error 500 en el hosting) */
+(function ensureTrustFinance() {
+  if (typeof window !== 'undefined' && window.TrustFinance) return;
+  function calcMonthlyPayment(price, downPayment = 0, months = 48, annualRatePercent = 24) {
+    const principal = Math.max(0, Number(price) - Number(downPayment || 0));
+    const n = Math.max(1, parseInt(months, 10) || 48);
+    if (principal <= 0) return 0;
+    const annual = Number(annualRatePercent);
+    if (!annual || annual <= 0) return Math.round(principal / n);
+    const r = annual / 100 / 12;
+    const factor = Math.pow(1 + r, n);
+    return Math.round((principal * r * factor) / (factor - 1));
+  }
+  function getVehicleMonthlyPayment(vehicle) {
+    if (!vehicle || vehicle.finance_enabled === false) return null;
+    if (vehicle.finance_monthly != null && vehicle.finance_monthly > 0) {
+      return Number(vehicle.finance_monthly);
+    }
+    return calcMonthlyPayment(
+      vehicle.price,
+      vehicle.finance_down_payment ?? 0,
+      vehicle.finance_months ?? 48,
+      vehicle.finance_annual_rate ?? 24
+    );
+  }
+  if (typeof window !== 'undefined') {
+    window.TrustFinance = { calcMonthlyPayment, getVehicleMonthlyPayment };
+  }
+})();
+
 let supabaseClient = null;
 const USE_SUPABASE = SUPABASE_URL !== 'TU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY';
 
