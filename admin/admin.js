@@ -1120,6 +1120,41 @@ async function isSiteBucketReady() {
   return siteBucketReady;
 }
 
+function isSiteSettingsMissingError(error) {
+  const msg = (error?.message || '').toLowerCase();
+  return (
+    error?.code === 'PGRST205' ||
+    error?.code === '42P01' ||
+    msg.includes('site_settings') ||
+    msg.includes('schema cache')
+  );
+}
+
+function renderSiteSettingsSetupHelp(grid, errorMessage = '') {
+  grid.innerHTML = `
+    <div class="site-media-setup">
+      <h3>Falta configurar la base de datos</h3>
+      <p>Para subir logo y banners hay que crear la tabla <code>site_settings</code> en Supabase (solo se hace una vez).</p>
+      ${errorMessage ? `<p class="site-media-setup-error">${escapeHtml(errorMessage)}</p>` : ''}
+      <ol class="site-media-setup-steps">
+        <li>Abre <a href="https://supabase.com/dashboard/project/rjsfkrgsyduiwyamhdkg/sql/new" target="_blank" rel="noopener">Supabase → SQL Editor</a></li>
+        <li>Copia el archivo <strong>sql/site_imagenes.sql</strong> del repositorio (o <code>sql/setup_completo.sql</code> completo)</li>
+        <li>Pégalo en el editor y pulsa <strong>Run</strong></li>
+        <li>Vuelve aquí y pulsa <strong>Reintentar</strong></li>
+      </ol>
+      <div class="site-media-setup-actions">
+        <button type="button" class="btn btn-primary" id="btnRetrySiteMedia">Reintentar</button>
+        <a class="btn btn-outline" href="https://github.com/tomydominguez23/Motors-Y-Trust/blob/main/sql/site_imagenes.sql" target="_blank" rel="noopener">Ver SQL en GitHub</a>
+      </div>
+      <p class="text-muted" style="font-size:.78rem;margin-top:.75rem;">Sin SQL también puedes pegar una URL de imagen después de crear la tabla; el botón Subir necesita el bucket «site» (el mismo script lo crea).</p>
+    </div>
+  `;
+  document.getElementById('btnRetrySiteMedia')?.addEventListener('click', () => {
+    siteBucketReady = null;
+    loadSiteMedia();
+  });
+}
+
 async function loadSiteMedia() {
   const grid = document.getElementById('siteMediaGrid');
   if (!grid) return;
@@ -1128,7 +1163,11 @@ async function loadSiteMedia() {
 
   const { data, error } = await sb.from('site_settings').select('key, value');
   if (error) {
-    grid.innerHTML = `<div class="site-media-error">No se pudo leer site_settings: ${escapeHtml(error.message)}. Ejecuta <code>sql/setup_completo.sql</code> en Supabase.</div>`;
+    if (isSiteSettingsMissingError(error)) {
+      renderSiteSettingsSetupHelp(grid, error.message);
+    } else {
+      grid.innerHTML = `<div class="site-media-error">Error: ${escapeHtml(error.message)}</div>`;
+    }
     return;
   }
 

@@ -310,6 +310,46 @@ body.admin-requires-auth #adminLayout { display: none !important; }
   color: var(--danger);
   font-size: .88rem;
 }
+
+.site-media-setup {
+  max-width: 560px;
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.site-media-setup h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+
+.site-media-setup-steps {
+  margin: 1rem 0 1rem 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.site-media-setup-steps a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.site-media-setup-error {
+  font-size: 0.82rem;
+  color: var(--danger);
+  background: #fef2f2;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  margin: 0.5rem 0;
+}
+
+.site-media-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
 .image-drop-zone {
   border: 2px dashed var(--border); border-radius: 10px; padding: .75rem;
   background: var(--bg); transition: var(--transition);
