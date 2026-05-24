@@ -86,12 +86,9 @@ function openModal(title, bodyHTML) {
 
 function closeModal() {
   document.getElementById('adminModal').classList.remove('active');
+  revokeVehiclePreviewUrls();
 }
 
-document.getElementById('adminModalClose').addEventListener('click', closeModal);
-document.getElementById('adminModal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeModal();
-});
 
 /* ── Auth ────────────────────────────── */
 
@@ -123,7 +120,14 @@ async function updateSupabaseStatus() {
     return;
   }
 
-  el.textContent = 'Supabase conectado correctamente';
+  const { error: storageError } = await supabase.storage.from(STORAGE_BUCKET).list('', { limit: 1 });
+  if (storageError) {
+    el.textContent = `BD conectada. Storage «${STORAGE_BUCKET}»: ${storageError.message}. Crea el bucket público en Supabase Storage.`;
+    el.className = 'supabase-status warn';
+    return;
+  }
+
+  el.textContent = 'Supabase conectado (datos + storage de imágenes)';
   el.className = 'supabase-status ok';
 }
 
@@ -261,26 +265,30 @@ const pageMap = {
   expenses: { el: 'pageExpenses', title: 'Gastos', load: loadExpenses },
 };
 
-document.querySelectorAll('.sidebar-link[data-page]').forEach(btn => {
-  btn.addEventListener('click', () => navigateTo(btn.dataset.page));
-});
-
 function navigateTo(page) {
+  if (!pageMap[page]) return;
+
   document.querySelectorAll('.sidebar-link[data-page]').forEach(b => b.classList.remove('active'));
   document.querySelector(`.sidebar-link[data-page="${page}"]`)?.classList.add('active');
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const info = pageMap[page];
-  if (info) {
-    document.getElementById(info.el).classList.add('active');
-    document.getElementById('pageTitle').textContent = info.title;
-    info.load();
-  }
-  document.getElementById('sidebar').classList.remove('open');
-}
 
-document.getElementById('sidebarToggle').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.toggle('open');
-});
+  document.querySelectorAll('.pages-viewport .page, .main-content > .page').forEach(p => {
+    p.classList.remove('active');
+  });
+
+  const pageEl = document.getElementById(pageMap[page].el);
+  if (pageEl) pageEl.classList.add('active');
+
+  document.getElementById('pageTitle').textContent = pageMap[page].title;
+  document.getElementById('sidebar')?.classList.remove('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  try {
+    pageMap[page].load();
+  } catch (err) {
+    console.error(err);
+    showToast('Error cargando sección: ' + err.message, 'error');
+  }
+}
 
 /* ── Dashboard ───────────────────────── */
 
@@ -356,6 +364,7 @@ async function loadDashboard() {
 
 function renderChart(data) {
   const container = document.getElementById('chartContainer');
+  if (!container) return;
   if (!data.length) {
     container.innerHTML = '<p class="text-muted" style="text-align:center;padding:3rem;">No hay datos de ventas mensuales</p>';
     return;
@@ -368,6 +377,138 @@ function renderChart(data) {
       <span class="bar-label">${d.month_label.split(' ')[0]}</span>
     </div>`;
   }).join('')}</div>`;
+}
+
+/* ── Vehicle images ──────────────────── */
+
+const STORAGE_BUCKET = 'vehicles';
+let vehicleImageQueue = [];
+
+function resetVehicleImages(urls = []) {
+  vehicleImageQueue = (urls || []).map(url => ({ type: 'url', url }));
+}
+
+function revokeVehiclePreviewUrls() {
+  vehicleImageQueue.forEach(item => {
+    if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+  });
+}
+
+function initVehicleImageManager(urls = []) {
+  resetVehicleImages(urls);
+  renderVehicleImageList();
+  updateVehicleLivePreview();
+  bindVehicleImageControls();
+}
+
+function bindVehicleImageControls() {
+  const input = document.getElementById('vf_images_input');
+  const addBtn = document.getElementById('btnAddImages');
+  if (!input || !addBtn) return;
+
+  addBtn.onclick = () => input.click();
+  input.onchange = () => {
+    Array.from(input.files || []).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      const previewUrl = URL.createObjectURL(file);
+      vehicleImageQueue.push({ type: 'file', file, previewUrl });
+    });
+    input.value = '';
+    renderVehicleImageList();
+    updateVehicleLivePreview();
+  };
+}
+
+function renderVehicleImageList() {
+  const list = document.getElementById('vehicleImageList');
+  if (!list) return;
+
+  if (vehicleImageQueue.length === 0) {
+    list.innerHTML = '<p class="text-muted" style="font-size:.85rem;">Sin imágenes. Agrega fotos para mostrar el auto en la web.</p>';
+    return;
+  }
+
+  list.innerHTML = vehicleImageQueue.map((item, index) => {
+    const src = item.previewUrl || item.url;
+    const isCover = index === 0;
+    return `
+      <div class="image-manager-item ${isCover ? 'is-cover' : ''}" data-index="${index}">
+        ${isCover ? '<span class="image-cover-badge">Portada</span>' : ''}
+        <img src="${src}" alt="Imagen ${index + 1}">
+        <div class="image-manager-actions">
+          <button type="button" title="Subir" onclick="moveVehicleImage(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" title="Bajar" onclick="moveVehicleImage(${index}, 1)" ${index === vehicleImageQueue.length - 1 ? 'disabled' : ''}>↓</button>
+          <button type="button" title="Eliminar" onclick="removeVehicleImage(${index})" style="color:var(--danger);">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.moveVehicleImage = function(index, direction) {
+  const next = index + direction;
+  if (next < 0 || next >= vehicleImageQueue.length) return;
+  const copy = [...vehicleImageQueue];
+  [copy[index], copy[next]] = [copy[next], copy[index]];
+  vehicleImageQueue = copy;
+  renderVehicleImageList();
+  updateVehicleLivePreview();
+};
+
+window.removeVehicleImage = function(index) {
+  const item = vehicleImageQueue[index];
+  if (item?.previewUrl) URL.revokeObjectURL(item.previewUrl);
+  vehicleImageQueue.splice(index, 1);
+  renderVehicleImageList();
+  updateVehicleLivePreview();
+};
+
+function updateVehicleLivePreview() {
+  const box = document.getElementById('vehicleLivePreview');
+  if (!box) return;
+
+  const brand = document.getElementById('vf_brand')?.value || 'Marca';
+  const model = document.getElementById('vf_model')?.value || 'Modelo';
+  const year = document.getElementById('vf_year')?.value || new Date().getFullYear();
+  const price = document.getElementById('vf_price')?.value;
+  const cover = vehicleImageQueue[0];
+  const coverSrc = cover ? (cover.previewUrl || cover.url) : null;
+
+  box.innerHTML = `
+    <h4>Vista previa (así se verá en la web)</h4>
+    <div class="preview-card">
+      ${coverSrc
+        ? `<img src="${coverSrc}" alt="Vista previa">`
+        : '<div style="height:160px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:.85rem;">Sin foto</div>'}
+      <div class="preview-card-body">
+        <h5>${brand} ${model}</h5>
+        <p class="text-muted" style="font-size:.82rem;">${year}</p>
+        ${price ? `<p style="font-weight:700;margin-top:.35rem;">${formatPrice(price)}</p>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+async function uploadVehicleImages(vehicleId) {
+  const urls = [];
+  for (const item of vehicleImageQueue) {
+    if (item.type === 'url' && item.url) {
+      urls.push(item.url);
+      continue;
+    }
+    if (item.type === 'file' && item.file) {
+      const safeName = item.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${vehicleId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+      const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, item.file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      if (error) throw new Error('Error subiendo imagen: ' + error.message);
+      const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+      urls.push(data.publicUrl);
+    }
+  }
+  return urls;
 }
 
 /* ── Vehicles CRUD ───────────────────── */
@@ -396,9 +537,13 @@ async function loadVehicles() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(v => `
+  tbody.innerHTML = filtered.map(v => {
+    const thumb = v.images && v.images[0]
+      ? `<img src="${v.images[0]}" alt="" class="vehicle-thumb">`
+      : '';
+    return `
     <tr>
-      <td><strong>${v.brand} ${v.model}</strong><br><span style="font-size:.78rem;color:var(--text-light);">${v.color || ''} · ${v.fuel} · ${v.transmission}</span></td>
+      <td>${thumb}<strong>${v.brand} ${v.model}</strong><br><span style="font-size:.78rem;color:var(--text-light);">${v.color || ''} · ${v.fuel} · ${v.transmission}</span></td>
       <td>${v.year}</td>
       <td>${v.type}</td>
       <td>${formatKm(v.km)}</td>
@@ -420,12 +565,9 @@ async function loadVehicles() {
           </button>
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
-
-document.getElementById('vehicleSearch').addEventListener('input', debounce(loadVehicles, 300));
-document.getElementById('vehicleStatusFilter').addEventListener('change', loadVehicles);
 
 function vehicleFormHTML(v = {}) {
   return `
@@ -519,6 +661,14 @@ function vehicleFormHTML(v = {}) {
         <label>Descripción</label>
         <textarea id="vf_description" rows="3" placeholder="Descripción del vehículo...">${v.description || ''}</textarea>
       </div>
+      <div class="form-group image-manager-section">
+        <label>Imágenes del vehículo</label>
+        <p class="text-muted" style="font-size:.8rem;margin-bottom:.5rem;">La primera imagen es la portada en la web. Usa ↑ ↓ para reordenar.</p>
+        <div id="vehicleImageList" class="image-manager-list"></div>
+        <input type="file" id="vf_images_input" accept="image/jpeg,image/png,image/webp" multiple hidden>
+        <button type="button" class="btn btn-outline btn-sm" id="btnAddImages">+ Agregar imágenes</button>
+        <div id="vehicleLivePreview" class="vehicle-live-preview"></div>
+      </div>
       <div class="form-row-3">
         <div class="form-group">
           <label>Color carrocería (SVG)</label>
@@ -550,21 +700,19 @@ function vehicleFormHTML(v = {}) {
   `;
 }
 
-document.getElementById('btnNewVehicle').addEventListener('click', () => {
-  openModal('Nuevo Vehículo', vehicleFormHTML());
-  document.getElementById('vehicleForm').addEventListener('submit', saveVehicle);
-});
-
-window.editVehicle = async function(id) {
-  const { data } = await supabase.from('vehicles').select('*').eq('id', id).single();
-  if (!data) return;
-  openModal('Editar Vehículo', vehicleFormHTML(data));
-  document.getElementById('vehicleForm').addEventListener('submit', saveVehicle);
-};
+function openVehicleModal(vehicle = {}) {
+  openModal(vehicle.id ? 'Editar Vehículo' : 'Nuevo Vehículo', vehicleFormHTML(vehicle));
+  initVehicleImageManager(vehicle.images || []);
+  ['vf_brand', 'vf_model', 'vf_year', 'vf_price'].forEach(fid => {
+    document.getElementById(fid)?.addEventListener('input', updateVehicleLivePreview);
+  });
+  const form = document.getElementById('vehicleForm');
+  form?.addEventListener('submit', saveVehicle);
+}
 
 async function saveVehicle(e) {
   e.preventDefault();
-  const id = document.getElementById('vf_id').value;
+  const existingId = document.getElementById('vf_id').value;
   const payload = {
     brand: document.getElementById('vf_brand').value,
     model: document.getElementById('vf_model').value,
@@ -585,21 +733,41 @@ async function saveVehicle(e) {
     window_color: document.getElementById('vf_window_color').value,
   };
 
-  let error;
-  if (id) {
-    ({ error } = await supabase.from('vehicles').update(payload).eq('id', id));
-  } else {
-    ({ error } = await supabase.from('vehicles').insert(payload));
-  }
+  try {
+    let vehicleId = existingId;
 
-  if (error) {
-    showToast('Error guardando vehículo: ' + error.message, 'error');
-  } else {
-    showToast(id ? 'Vehículo actualizado' : 'Vehículo publicado', 'success');
+    if (!vehicleId) {
+      const { data: created, error: createError } = await supabase
+        .from('vehicles')
+        .insert({ ...payload, images: [] })
+        .select('id')
+        .single();
+      if (createError) throw createError;
+      vehicleId = created.id;
+    }
+
+    const images = await uploadVehicleImages(vehicleId);
+    const { error: updateError } = await supabase
+      .from('vehicles')
+      .update({ ...payload, images })
+      .eq('id', vehicleId);
+
+    if (updateError) throw updateError;
+
+    showToast(existingId ? 'Vehículo actualizado' : 'Vehículo publicado', 'success');
+    revokeVehiclePreviewUrls();
     closeModal();
     loadVehicles();
+  } catch (err) {
+    showToast(err.message || 'Error guardando vehículo', 'error');
   }
 }
+
+window.editVehicle = async function(id) {
+  const { data } = await supabase.from('vehicles').select('*').eq('id', id).single();
+  if (!data) return;
+  openVehicleModal(data);
+};
 
 window.toggleFeatured = async function(id, checked) {
   const { error } = await supabase.from('vehicles').update({ is_featured: checked }).eq('id', id);
@@ -663,9 +831,6 @@ async function loadSales() {
     </tr>
   `).join('');
 }
-
-document.getElementById('saleSearch').addEventListener('input', debounce(loadSales, 300));
-document.getElementById('saleStatusFilter').addEventListener('change', loadSales);
 
 async function saleFormHTML(s = {}) {
   const { data: availableVehicles } = await supabase
@@ -741,11 +906,6 @@ async function saleFormHTML(s = {}) {
     </form>
   `;
 }
-
-document.getElementById('btnNewSale').addEventListener('click', async () => {
-  openModal('Nueva Venta', await saleFormHTML());
-  document.getElementById('saleForm').addEventListener('submit', saveSale);
-});
 
 window.editSale = async function(id) {
   const { data } = await supabase.from('sales').select('*').eq('id', id).single();
@@ -830,8 +990,6 @@ async function loadCustomers() {
   `).join('');
 }
 
-document.getElementById('customerSearch').addEventListener('input', debounce(loadCustomers, 300));
-
 function customerFormHTML(c = {}) {
   return `
     <form class="modal-form" id="customerForm">
@@ -871,11 +1029,6 @@ function customerFormHTML(c = {}) {
     </form>
   `;
 }
-
-document.getElementById('btnNewCustomer').addEventListener('click', () => {
-  openModal('Nuevo Cliente', customerFormHTML());
-  document.getElementById('customerForm').addEventListener('submit', saveCustomer);
-});
 
 window.editCustomer = async function(id) {
   const { data } = await supabase.from('customers').select('*').eq('id', id).single();
@@ -961,13 +1114,6 @@ window.markRead = async function(id) {
   loadInquiries();
   loadDashboard();
 };
-
-document.getElementById('btnMarkAllRead').addEventListener('click', async () => {
-  await supabase.from('inquiries').update({ is_read: true }).eq('is_read', false);
-  showToast('Todas marcadas como leídas', 'success');
-  loadInquiries();
-  loadDashboard();
-});
 
 window.deleteInquiry = async function(id) {
   if (!confirm('¿Eliminar esta consulta?')) return;
@@ -1070,11 +1216,6 @@ async function expenseFormHTML(e = {}) {
   `;
 }
 
-document.getElementById('btnNewExpense').addEventListener('click', async () => {
-  openModal('Nuevo Gasto', await expenseFormHTML());
-  document.getElementById('expenseForm').addEventListener('submit', saveExpense);
-});
-
 window.editExpense = async function(id) {
   const { data } = await supabase.from('expenses').select('*').eq('id', id).single();
   if (!data) return;
@@ -1120,19 +1261,80 @@ function debounce(fn, ms) {
 
 /* ── Init ────────────────────────────── */
 
-try {
-  if (REQUIRE_AUTH) {
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) initAdminPanel();
-    });
-    setupAuth();
-    checkSession();
-  } else {
-    initAdminPanel();
+function bindOptional(id, event, handler) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(event, handler);
+}
+
+function initBindings() {
+  bindOptional('adminModalClose', 'click', closeModal);
+  const adminModal = document.getElementById('adminModal');
+  adminModal?.addEventListener('click', e => {
+    if (e.target === adminModal) closeModal();
+  });
+
+  document.querySelector('.sidebar-nav')?.addEventListener('click', (e) => {
+    const link = e.target.closest('.sidebar-link[data-page]');
+    if (!link) return;
+    e.preventDefault();
+    navigateTo(link.dataset.page);
+  });
+
+  bindOptional('sidebarToggle', 'click', () => {
+    document.getElementById('sidebar')?.classList.toggle('open');
+  });
+
+  bindOptional('vehicleSearch', 'input', debounce(loadVehicles, 300));
+  bindOptional('vehicleStatusFilter', 'change', loadVehicles);
+  bindOptional('btnNewVehicle', 'click', () => openVehicleModal({}));
+
+  bindOptional('saleSearch', 'input', debounce(loadSales, 300));
+  bindOptional('saleStatusFilter', 'change', loadSales);
+  bindOptional('btnNewSale', 'click', async () => {
+    openModal('Nueva Venta', await saleFormHTML());
+    document.getElementById('saleForm')?.addEventListener('submit', saveSale);
+  });
+
+  bindOptional('customerSearch', 'input', debounce(loadCustomers, 300));
+  bindOptional('btnNewCustomer', 'click', () => {
+    openModal('Nuevo Cliente', customerFormHTML());
+    document.getElementById('customerForm')?.addEventListener('submit', saveCustomer);
+  });
+
+  bindOptional('btnMarkAllRead', 'click', async () => {
+    await supabase.from('inquiries').update({ is_read: true }).eq('is_read', false);
+    showToast('Todas marcadas como leídas', 'success');
+    loadInquiries();
+    loadDashboard();
+  });
+
+  bindOptional('btnNewExpense', 'click', async () => {
+    openModal('Nuevo Gasto', await expenseFormHTML());
+    document.getElementById('expenseForm')?.addEventListener('submit', saveExpense);
+  });
+}
+
+function bootAdmin() {
+  try {
+    initBindings();
+    if (REQUIRE_AUTH) {
+      supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) initAdminPanel();
+      });
+      setupAuth();
+      checkSession();
+    } else {
+      initAdminPanel();
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById('adminLayout').style.display = 'flex';
+    showToast('Error al iniciar el panel: ' + err.message, 'error');
   }
-} catch (err) {
-  console.error(err);
-  const layout = document.getElementById('adminLayout');
-  if (layout) layout.style.display = 'flex';
-  showToast('Error al iniciar el panel: ' + err.message, 'error');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootAdmin);
+} else {
+  bootAdmin();
 }

@@ -171,6 +171,13 @@ body.admin-requires-auth #adminLayout { display: none !important; }
 
 .main-content {
   margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column;
+  min-width: 0;
+}
+
+.pages-viewport {
+  flex: 1;
+  width: 100%;
+  position: relative;
 }
 
 .topbar {
@@ -208,8 +215,46 @@ body.admin-requires-auth #adminLayout { display: none !important; }
 
 /* ── Pages ───────────────────────────── */
 
-.page { display: none; padding: 1.5rem; }
+.page { display: none; padding: 1.5rem; width: 100%; box-sizing: border-box; }
 .page.active { display: block; }
+
+/* ── Gestor de imágenes (vehículos) ─── */
+
+.image-manager-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.image-manager-list {
+  display: flex; flex-wrap: wrap; gap: .75rem; margin: .75rem 0;
+}
+.image-manager-item {
+  position: relative; width: 110px; border: 1.5px solid var(--border);
+  border-radius: 8px; overflow: hidden; background: var(--bg);
+}
+.image-manager-item.is-cover { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(15,52,96,.15); }
+.image-manager-item img { width: 100%; height: 78px; object-fit: cover; display: block; }
+.image-manager-actions {
+  display: flex; justify-content: space-between; padding: .25rem;
+  background: var(--bg-white); border-top: 1px solid var(--border-light);
+}
+.image-manager-actions button {
+  flex: 1; padding: .2rem; font-size: .72rem; color: var(--text-light);
+}
+.image-manager-actions button:hover { color: var(--primary); }
+.image-cover-badge {
+  position: absolute; top: 4px; left: 4px; font-size: .6rem; font-weight: 700;
+  background: var(--accent); color: #fff; padding: .15rem .35rem; border-radius: 4px;
+}
+.vehicle-live-preview {
+  margin-top: 1rem; padding: 1rem; background: var(--bg);
+  border: 1px dashed var(--border); border-radius: 10px;
+}
+.vehicle-live-preview h4 { font-size: .85rem; margin-bottom: .75rem; color: var(--text-light); }
+.preview-card {
+  max-width: 280px; background: #fff; border-radius: 12px; overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.preview-card img { width: 100%; height: 160px; object-fit: cover; }
+.preview-card-body { padding: .75rem 1rem; }
+.preview-card-body h5 { font-size: .95rem; margin-bottom: .25rem; }
+.vehicle-thumb { width: 48px; height: 36px; object-fit: cover; border-radius: 4px; vertical-align: middle; margin-right: .5rem; }
 
 .page-actions {
   display: flex; align-items: center; gap: .75rem;

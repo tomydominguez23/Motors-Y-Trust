@@ -188,14 +188,19 @@ function createVehicleCard(vehicle) {
     badgeHTML = '<span class="vehicle-badge featured">Destacado</span>';
   }
 
-  card.innerHTML = `
-    <div class="vehicle-card-image">
-      ${badgeHTML}
-      <div class="car-platform">
+  const coverImage = vehicle.images && vehicle.images.length > 0 ? vehicle.images[0] : null;
+  const imageBlock = coverImage
+    ? `<img src="${coverImage}" alt="${vehicle.brand} ${vehicle.model}" class="vehicle-photo" loading="lazy">`
+    : `<div class="car-platform">
         ${getCarSVG(vehicle)}
         <div class="platform-base"></div>
         <div class="platform-shadow"></div>
-      </div>
+      </div>`;
+
+  card.innerHTML = `
+    <div class="vehicle-card-image">
+      ${badgeHTML}
+      ${imageBlock}
     </div>
     <div class="vehicle-card-info">
       <h3>${vehicle.brand} ${vehicle.model}</h3>
@@ -327,8 +332,26 @@ document.getElementById('btnLoadMore').addEventListener('click', () => {
 function openModal(vehicle) {
   const overlay = document.getElementById('vehicleModal');
   const modalCarIcon = document.getElementById('modalCarIcon');
+  const photos = vehicle.images && vehicle.images.length > 0 ? vehicle.images : null;
 
-  modalCarIcon.innerHTML = getCarSVG(vehicle).replace('car-svg-thumb', 'modal-car-svg');
+  if (photos) {
+    modalCarIcon.innerHTML = `
+      <div class="modal-gallery">
+        <img src="${photos[0]}" alt="${vehicle.brand} ${vehicle.model}" class="modal-gallery-main">
+        ${photos.length > 1 ? `<div class="modal-gallery-thumbs">${photos.map((url, i) =>
+          `<img src="${url}" alt="Foto ${i + 1}" class="modal-gallery-thumb${i === 0 ? ' active' : ''}" data-url="${url}">`
+        ).join('')}</div>` : ''}
+      </div>`;
+    modalCarIcon.querySelectorAll('.modal-gallery-thumb').forEach(thumb => {
+      thumb.addEventListener('click', () => {
+        modalCarIcon.querySelector('.modal-gallery-main').src = thumb.dataset.url;
+        modalCarIcon.querySelectorAll('.modal-gallery-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+      });
+    });
+  } else {
+    modalCarIcon.innerHTML = getCarSVG(vehicle).replace('car-svg-thumb', 'modal-car-svg');
+  }
 
   document.getElementById('modalTitle').textContent = `${vehicle.brand} ${vehicle.model} ${vehicle.year}`;
   document.getElementById('modalPrice').textContent = formatPrice(vehicle.price);
