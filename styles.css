@@ -296,6 +296,14 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   display: flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-lg);
+  transition: var(--transition);
+}
+
+.hero-visual:hover {
+  opacity: .95;
 }
 
 .hero-car-showcase {
