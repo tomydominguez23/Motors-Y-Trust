@@ -30,9 +30,15 @@
         </div>
         <div class="login-error" id="loginError"></div>
         <button type="submit" class="btn btn-primary" style="width:100%;">Iniciar Sesión</button>
+        <div class="login-alt-actions">
+          <button type="button" class="btn btn-link" id="btnResetPassword">Restablecer contraseña</button>
+          <span class="login-alt-sep">·</span>
+          <button type="button" class="btn btn-link" id="btnMagicLink">Enviar enlace al correo</button>
+        </div>
       </form>
       <p class="login-hint">
-        El usuario debe existir en <strong>Supabase → Authentication → Users</strong>, con email confirmado y contraseña definida.
+        Si el usuario ya está en <strong>Authentication → Users</strong> pero no entra, confírmalo: clic en el usuario → <strong>Confirm user</strong>.
+        También puedes desactivar la confirmación en <strong>Authentication → Providers → Email</strong>.
       </p>
     </div>
   </div>
