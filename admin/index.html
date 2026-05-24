@@ -9,10 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin.css">
 </head>
-<body>
+<body class="admin-no-auth">
 
-  <!-- Login Screen -->
-  <div class="login-screen" id="loginScreen">
+  <!-- Login Screen (oculto mientras admin-no-auth; ver admin.css) -->
+  <div class="login-screen" id="loginScreen" hidden>
     <div class="login-card">
       <div class="login-logo">
         <span class="logo-trust">TRUST</span>
@@ -44,7 +44,7 @@
   </div>
 
   <!-- Admin Layout -->
-  <div class="admin-layout" id="adminLayout" style="display:none;">
+  <div class="admin-layout" id="adminLayout">
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
@@ -357,6 +357,6 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js"></script>
+  <script src="admin.js?v=3"></script>
 </body>
 </html>
