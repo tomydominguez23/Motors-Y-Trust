@@ -523,7 +523,7 @@ async function applySiteSettings() {
   if (settings.hero_banner) {
     const showcase = document.querySelector('.hero-car-showcase');
     if (showcase) {
-      showcase.innerHTML = `<img src="${settings.hero_banner}" alt="Vehículos Trust Motors" class="hero-banner-img">`;
+      showcase.innerHTML = `<img src="${settings.hero_banner}" alt="Mitsubishi Eclipse Cross RX 1.5" class="hero-car-photo hero-banner-img" loading="eager">`;
     }
   }
 
