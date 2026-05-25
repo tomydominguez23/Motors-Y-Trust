@@ -46,7 +46,7 @@
 }
 
 .vd-main {
-  padding: 6.5rem 0 3rem;
+  padding: calc(var(--header-h) + 1.5rem) 0 3rem;
   min-height: 70vh;
 }
 
