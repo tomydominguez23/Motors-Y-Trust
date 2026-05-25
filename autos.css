@@ -271,6 +271,11 @@
   aspect-ratio: 4/3;
   background: #eef1f5;
   overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.catalog-card-media .vehicle-badge.reserved--center {
+  z-index: 6;
 }
 
 .catalog-card-media img {

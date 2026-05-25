@@ -132,7 +132,7 @@ async function fetchRelatedVehicles(current) {
   }
   const { data } = await supabaseClient
     .from('vehicles')
-    .select('id, brand, model, year, type, price, km, images, color1, color2, window_color')
+    .select('id, brand, model, year, type, price, km, images, status, color1, color2, window_color')
     .in('status', ['disponible', 'reservado'])
     .neq('id', current.id)
     .limit(12);
@@ -336,12 +336,13 @@ function renderRelated(vehicles) {
   section.hidden = false;
   grid.innerHTML = vehicles.map((v) => {
     const cover = v.images?.[0];
+    const badge = window.TrustVehicleBadges?.vehicleImageBadgesHtml(v) || '';
     const visual = cover
       ? `<img src="${cover}" alt="${v.brand} ${v.model}" loading="lazy">`
       : `<div class="vd-related-svg">${getCarSVG(v)}</div>`;
     return `
       <a href="${vehicleUrl(v.id)}" class="vd-related-card">
-        ${visual}
+        <div class="vd-related-media">${badge}${visual}</div>
         <div class="vd-related-body">
           <h3>${v.brand} ${v.model}</h3>
           <p>${v.year} · ${formatKm(v.km)}</p>

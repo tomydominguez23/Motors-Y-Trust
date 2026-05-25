@@ -228,10 +228,11 @@ ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
 
--- Lectura pública de vehículos disponibles (para el sitio web)
-CREATE POLICY "Vehículos disponibles son públicos"
+-- Lectura pública: disponibles y reservados (vendidos no se muestran)
+CREATE POLICY "Vehículos visibles en el sitio"
   ON vehicles FOR SELECT
-  USING (status = 'disponible');
+  TO anon, authenticated
+  USING (status IN ('disponible', 'reservado'));
 
 -- Usuarios autenticados tienen acceso total a vehículos
 CREATE POLICY "Admin acceso total vehículos"

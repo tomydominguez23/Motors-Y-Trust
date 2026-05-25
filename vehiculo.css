@@ -124,6 +124,10 @@
   aspect-ratio: 4 / 3;
 }
 
+.vd-gallery-main-wrap .vehicle-badge.reserved--center {
+  z-index: 6;
+}
+
 .vd-gallery-main {
   width: 100%;
   height: 100%;
@@ -462,12 +466,19 @@
   transform: translateY(-2px);
 }
 
-.vd-related-card img,
-.vd-related-card .vd-related-svg {
-  width: 100%;
+.vd-related-media {
+  position: relative;
   height: 140px;
-  object-fit: cover;
+  overflow: hidden;
   background: #f3f4f6;
+}
+
+.vd-related-media img,
+.vd-related-media .vd-related-svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .vd-related-card .vd-related-svg {
