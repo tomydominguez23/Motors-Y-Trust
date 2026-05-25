@@ -551,13 +551,15 @@ async function applySiteSettings() {
 
 async function init() {
   bindUiHandlers();
-  await fetchVehicles();
+  await Promise.all([
+    fetchVehicles(),
+    applySiteSettings().catch((err) => console.warn('Trust Motors: site_settings', err)),
+  ]);
   if (document.getElementById('featuredGrid')) {
     renderFeatured();
   } else if (document.getElementById('vehiclesGrid')) {
     renderVehicles();
   }
-  applySiteSettings().catch((err) => console.warn('Trust Motors: site_settings', err));
 }
 
 if (document.readyState === 'loading') {
