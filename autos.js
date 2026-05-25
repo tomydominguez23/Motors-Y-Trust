@@ -72,7 +72,7 @@ async function fetchVehicles() {
   const { data, error } = await supabaseClient
     .from('vehicles')
     .select('*')
-    .in('status', ['disponible', 'reservado'])
+    .in('status', ['disponible', 'reservado', 'vendido'])
     .order('is_featured', { ascending: false })
     .order('created_at', { ascending: false });
 
@@ -163,14 +163,17 @@ function getFilteredSorted() {
 }
 
 function createCatalogCard(vehicle) {
-  const reserved = window.TrustVehicleBadges?.isReserved(vehicle);
+  const badges = window.TrustVehicleBadges;
+  const unavailable = badges?.isUnavailable(vehicle);
+  const statusLabel = badges?.unavailableLabel(vehicle);
+  const priceClass = badges?.unavailablePriceClass(vehicle) || '';
   const card = document.createElement('article');
-  card.className = 'catalog-card' + (reserved ? ' catalog-card--reserved' : '');
+  card.className = 'catalog-card' + (unavailable ? ' catalog-card--unavailable' : '');
 
   const photos = vehicle.images && vehicle.images.length ? vehicle.images : [];
   const cover = photos[0];
   const photoCount = photos.length;
-  const financiable = !reserved && isFinanciable(vehicle);
+  const financiable = !unavailable && isFinanciable(vehicle);
   const monthly = financiable ? window.TrustFinance.getVehicleMonthlyPayment(vehicle) : null;
 
   const mediaHtml = cover
@@ -179,7 +182,7 @@ function createCatalogCard(vehicle) {
 
   const statusBadge = window.TrustVehicleBadges?.vehicleImageBadgesHtml(vehicle) || '';
 
-  const financeBadge = financiable && !window.TrustVehicleBadges?.isReserved(vehicle)
+  const financeBadge = financiable && !unavailable
     ? '<span class="catalog-finance-badge">Financiable</span>'
     : '';
 
@@ -205,8 +208,8 @@ function createCatalogCard(vehicle) {
           <div class="year">${vehicle.year}</div>
         </div>
         <div>
-          <span class="label">${reserved ? 'Estado' : 'Precio'}</span>
-          <div class="price${reserved ? ' price--reserved' : ''}">${reserved ? 'Reservado' : formatPrice(vehicle.price)}</div>
+          <span class="label">${unavailable ? 'Estado' : 'Precio'}</span>
+          <div class="price${priceClass ? ' ' + priceClass : ''}">${unavailable ? statusLabel : formatPrice(vehicle.price)}</div>
         </div>
       </div>
       ${monthly ? `<p class="catalog-card-finance">Desde ${formatPrice(monthly)}/mes*</p>` : ''}

@@ -274,7 +274,7 @@
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.catalog-card-media .vehicle-reserved-overlay {
+.catalog-card-media .vehicle-status-overlay {
   z-index: 5;
 }
 

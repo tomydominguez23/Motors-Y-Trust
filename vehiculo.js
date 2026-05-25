@@ -133,7 +133,7 @@ async function fetchRelatedVehicles(current) {
   const { data } = await supabaseClient
     .from('vehicles')
     .select('id, brand, model, year, type, price, km, images, status, color1, color2, window_color')
-    .in('status', ['disponible', 'reservado'])
+    .in('status', ['disponible', 'reservado', 'vendido'])
     .neq('id', current.id)
     .limit(12);
   const list = data || [];
@@ -162,11 +162,11 @@ const ICONS = {
   loc: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
 };
 
-function updateGalleryReservedBadge() {
+function updateGalleryStatusBadge() {
   const wrap = document.querySelector('.vd-gallery-main-wrap');
   if (!wrap) return;
-  wrap.querySelector('.vehicle-reserved-overlay')?.remove();
-  if (currentVehicle && window.TrustVehicleBadges?.isReserved(currentVehicle)) {
+  wrap.querySelector('.vehicle-status-overlay')?.remove();
+  if (currentVehicle && window.TrustVehicleBadges?.isUnavailable(currentVehicle)) {
     wrap.insertAdjacentHTML(
       'beforeend',
       window.TrustVehicleBadges.vehicleImageBadgesHtml(currentVehicle)
@@ -191,7 +191,7 @@ function renderGalleryMain() {
     main.innerHTML = `<div class="vd-svg-fallback">${getCarSVG(currentVehicle)}</div>`;
   }
 
-  updateGalleryReservedBadge();
+  updateGalleryStatusBadge();
 
   counter.textContent = galleryPhotos.length > 0
     ? `${galleryIndex + 1} / ${galleryPhotos.length}`
@@ -285,16 +285,21 @@ function renderVehicle(vehicle) {
   document.getElementById('vdSubtitle').textContent =
     `${vehicle.brand} ${vehicle.model}`.toUpperCase();
   const priceEl = document.getElementById('vdPrice');
-  const reserved = window.TrustVehicleBadges?.isReserved(vehicle);
+  const badges = window.TrustVehicleBadges;
+  const unavailable = badges?.isUnavailable(vehicle);
+  const statusLabel = badges?.unavailableLabel(vehicle);
   if (priceEl) {
-    priceEl.textContent = reserved ? 'Reservado' : formatPrice(vehicle.price);
-    priceEl.classList.toggle('vd-price--reserved', reserved);
+    priceEl.textContent = unavailable ? statusLabel : formatPrice(vehicle.price);
+    priceEl.classList.remove('vd-price--reserved', 'vd-price--sold');
+    if (unavailable) {
+      priceEl.classList.add(badges?.isSold(vehicle) ? 'vd-price--sold' : 'vd-price--reserved');
+    }
   }
 
   const financeBox = document.getElementById('vdFinanceBox');
-  const monthly = !reserved ? window.TrustFinance?.getVehicleMonthlyPayment(vehicle) : null;
+  const monthly = !unavailable ? window.TrustFinance?.getVehicleMonthlyPayment(vehicle) : null;
   if (financeBox) {
-    if (reserved) {
+    if (unavailable) {
       financeBox.hidden = true;
     } else if (monthly) {
       financeBox.hidden = false;
@@ -322,7 +327,9 @@ function renderVehicle(vehicle) {
   ].join('');
 
   const financeTxt = monthly ? ` Cuota referencial: ${formatPrice(monthly)}/mes.` : '';
-  const priceTxt = reserved ? ' (reservado)' : ` (${formatPrice(vehicle.price)})`;
+  const priceTxt = unavailable
+    ? ` (${statusLabel?.toLowerCase() || 'no disponible'})`
+    : ` (${formatPrice(vehicle.price)})`;
   const msg = encodeURIComponent(
     `Hola, me interesa el ${vehicle.brand} ${vehicle.model} ${vehicle.year}${priceTxt}.${financeTxt} Publicado en Trust Motors. ` +
     window.location.href
@@ -376,7 +383,7 @@ async function init() {
   setupSaveButton();
 
   const vehicle = await fetchVehicleById(id);
-  if (!vehicle || vehicle.status === 'vendido') {
+  if (!vehicle) {
     showState('error');
     return;
   }

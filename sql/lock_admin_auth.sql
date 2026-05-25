@@ -21,7 +21,7 @@ DROP POLICY IF EXISTS "Vehículos visibles en el sitio" ON public.vehicles;
 CREATE POLICY "Vehículos visibles en el sitio"
   ON public.vehicles FOR SELECT
   TO anon, authenticated
-  USING (status IN ('disponible', 'reservado'));
+  USING (status IN ('disponible', 'reservado', 'vendido'));
 
 DROP POLICY IF EXISTS "Admin acceso total vehículos" ON public.vehicles;
 CREATE POLICY "Admin acceso total vehículos"

@@ -175,7 +175,7 @@ async function fetchVehicles() {
     const { data, error } = await supabaseClient
       .from('vehicles')
       .select('*')
-      .in('status', ['disponible', 'reservado'])
+      .in('status', ['disponible', 'reservado', 'vendido'])
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -240,10 +240,13 @@ function createVehicleCard(vehicle) {
   card.dataset.price = vehicle.price;
   card.dataset.year = vehicle.year;
 
-  const reserved = window.TrustVehicleBadges?.isReserved(vehicle);
-  const badgeHTML = window.TrustVehicleBadges?.vehicleImageBadgesHtml(vehicle) || '';
+  const badges = window.TrustVehicleBadges;
+  const unavailable = badges?.isUnavailable(vehicle);
+  const statusLabel = badges?.unavailableLabel(vehicle);
+  const priceClass = badges?.unavailablePriceClass(vehicle) || '';
+  const badgeHTML = badges?.vehicleImageBadgesHtml(vehicle) || '';
 
-  const monthly = !reserved ? window.TrustFinance?.getVehicleMonthlyPayment(vehicle) : null;
+  const monthly = !unavailable ? window.TrustFinance?.getVehicleMonthlyPayment(vehicle) : null;
   const financeLine = monthly
     ? `<span class="vehicle-finance-line">Desde ${formatPrice(monthly)}/mes*</span>`
     : '';
@@ -277,8 +280,8 @@ function createVehicleCard(vehicle) {
       </div>
       <div class="vehicle-card-footer">
         <div>
-          <span class="vehicle-price${reserved ? ' vehicle-price--reserved' : ''}">${reserved ? 'Reservado' : formatPrice(vehicle.price)}</span>
-          <span class="vehicle-price-sub">${reserved ? 'No disponible para venta' : 'Precio contado'}</span>
+          <span class="vehicle-price${priceClass ? ' vehicle-' + priceClass : ''}">${unavailable ? statusLabel : formatPrice(vehicle.price)}</span>
+          <span class="vehicle-price-sub">${unavailable ? 'No disponible para venta' : 'Precio contado'}</span>
           ${financeLine}
         </div>
         <a href="${whatsappVehicleUrl(vehicle)}" class="btn btn-whatsapp btn-view-detail" target="_blank" rel="noopener">WhatsApp</a>
