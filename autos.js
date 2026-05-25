@@ -72,7 +72,7 @@ async function fetchVehicles() {
   const { data, error } = await supabaseClient
     .from('vehicles')
     .select('*')
-    .eq('status', 'disponible')
+    .in('status', ['disponible', 'reservado'])
     .order('is_featured', { ascending: false })
     .order('created_at', { ascending: false });
 
@@ -176,7 +176,9 @@ function createCatalogCard(vehicle) {
     ? `<img src="${escapeHtml(cover)}" alt="${escapeHtml(vehicle.brand)} ${escapeHtml(vehicle.model)}" loading="lazy">`
     : '<div class="catalog-card-placeholder">Sin foto</div>';
 
-  const financeBadge = financiable
+  const statusBadge = window.TrustVehicleBadges?.vehicleImageBadgesHtml(vehicle) || '';
+
+  const financeBadge = financiable && !window.TrustVehicleBadges?.isReserved(vehicle)
     ? '<span class="catalog-finance-badge">Financiable</span>'
     : '';
 
@@ -187,6 +189,7 @@ function createCatalogCard(vehicle) {
   card.innerHTML = `
     <a href="${vehicleDetailUrl(vehicle.id)}" class="catalog-card-media">
       ${mediaHtml}
+      ${statusBadge}
       ${photoBadge}
       ${financeBadge}
     </a>

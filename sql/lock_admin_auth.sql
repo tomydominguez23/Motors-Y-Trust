@@ -17,10 +17,11 @@ DROP POLICY IF EXISTS "Temporal: anon site_settings" ON public.site_settings;
 
 -- ── Vehículos: público solo lectura de disponibles ──────────
 DROP POLICY IF EXISTS "Vehículos disponibles son públicos" ON public.vehicles;
-CREATE POLICY "Vehículos disponibles son públicos"
+DROP POLICY IF EXISTS "Vehículos visibles en el sitio" ON public.vehicles;
+CREATE POLICY "Vehículos visibles en el sitio"
   ON public.vehicles FOR SELECT
   TO anon, authenticated
-  USING (status = 'disponible');
+  USING (status IN ('disponible', 'reservado'));
 
 DROP POLICY IF EXISTS "Admin acceso total vehículos" ON public.vehicles;
 CREATE POLICY "Admin acceso total vehículos"

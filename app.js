@@ -175,7 +175,7 @@ async function fetchVehicles() {
     const { data, error } = await supabaseClient
       .from('vehicles')
       .select('*')
-      .eq('status', 'disponible')
+      .in('status', ['disponible', 'reservado'])
       .order('is_featured', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -240,10 +240,7 @@ function createVehicleCard(vehicle) {
   card.dataset.price = vehicle.price;
   card.dataset.year = vehicle.year;
 
-  let badgeHTML = '';
-  if (vehicle.is_featured) {
-    badgeHTML = '<span class="vehicle-badge featured">Destacado</span>';
-  }
+  const badgeHTML = window.TrustVehicleBadges?.vehicleImageBadgesHtml(vehicle) || '';
 
   const monthly = window.TrustFinance?.getVehicleMonthlyPayment(vehicle);
   const financeLine = monthly

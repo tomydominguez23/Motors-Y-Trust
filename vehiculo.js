@@ -133,7 +133,7 @@ async function fetchRelatedVehicles(current) {
   const { data } = await supabaseClient
     .from('vehicles')
     .select('id, brand, model, year, type, price, km, images, color1, color2, window_color')
-    .eq('status', 'disponible')
+    .in('status', ['disponible', 'reservado'])
     .neq('id', current.id)
     .limit(12);
   const list = data || [];
@@ -162,6 +162,18 @@ const ICONS = {
   loc: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
 };
 
+function updateGalleryReservedBadge() {
+  const wrap = document.querySelector('.vd-gallery-main-wrap');
+  if (!wrap) return;
+  wrap.querySelector('.vehicle-badge.reserved--center')?.remove();
+  if (currentVehicle && window.TrustVehicleBadges?.isReserved(currentVehicle)) {
+    wrap.insertAdjacentHTML(
+      'beforeend',
+      window.TrustVehicleBadges.vehicleImageBadgesHtml(currentVehicle)
+    );
+  }
+}
+
 function renderGalleryMain() {
   const main = document.getElementById('vdGalleryMain');
   const counter = document.getElementById('vdCounter');
@@ -178,6 +190,8 @@ function renderGalleryMain() {
   } else if (currentVehicle) {
     main.innerHTML = `<div class="vd-svg-fallback">${getCarSVG(currentVehicle)}</div>`;
   }
+
+  updateGalleryReservedBadge();
 
   counter.textContent = galleryPhotos.length > 0
     ? `${galleryIndex + 1} / ${galleryPhotos.length}`
@@ -354,7 +368,7 @@ async function init() {
   setupSaveButton();
 
   const vehicle = await fetchVehicleById(id);
-  if (!vehicle || (vehicle.status && vehicle.status !== 'disponible')) {
+  if (!vehicle || vehicle.status === 'vendido') {
     showState('error');
     return;
   }

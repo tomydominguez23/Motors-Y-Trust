@@ -655,6 +655,25 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   color: #b45309;
 }
 
+.vehicle-badge.reserved {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.vehicle-badge.reserved--center {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  letter-spacing: 0.1em;
+  z-index: 6;
+  pointer-events: none;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+}
+
 .vehicle-badge.offer {
   background: #dcfce7;
   color: #15803d;
