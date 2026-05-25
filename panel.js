@@ -5,8 +5,8 @@
    con los valores de tu proyecto en Supabase.
    ======================================== */
 
-/** Cambiar a true cuando quieras volver a exigir login */
-const REQUIRE_AUTH = false;
+/** Panel protegido con Supabase Auth (email + contraseña) */
+const REQUIRE_AUTH = true;
 
 const SUPABASE_URL = window.TRUST_MOTORS_SUPABASE?.url || 'https://rjsfkrgsyduiwyamhdkg.supabase.co';
 const SUPABASE_ANON_KEY = window.TRUST_MOTORS_SUPABASE?.key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqc2ZrcmdzeWR1aXd5YW1oZGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mjg5OTksImV4cCI6MjA5NTIwNDk5OX0.zgmu6vtJGmIILJzEl75vfCn9oiM6j1KqqgkIzw5pg2o';
@@ -122,6 +122,10 @@ function closeModal() {
 /* ── Auth ────────────────────────────── */
 
 function initAdminPanel() {
+  if (REQUIRE_AUTH) {
+    const loginEl = document.getElementById('loginScreen');
+    if (loginEl) loginEl.hidden = true;
+  }
   showAdmin();
   const hash = (location.hash || '').replace('#', '');
   if (hash && pageMap[hash]) {
@@ -141,9 +145,9 @@ async function updateSupabaseStatus() {
 
   const { error: tableError } = await sb.from('vehicles').select('id').limit(1);
   if (tableError) {
-    el.textContent = `Error Supabase: ${tableError.message}. Ejecuta sql/open_admin_no_auth.sql en el SQL Editor.`;
+    el.textContent = `Error Supabase: ${tableError.message}. Inicia sesión y ejecuta sql/lock_admin_auth.sql en el SQL Editor.`;
     el.className = 'supabase-status error';
-    showToast('Sin permisos en Supabase. Ejecuta open_admin_no_auth.sql', 'error');
+    showToast('Sin permisos en Supabase. Ejecuta sql/lock_admin_auth.sql', 'error');
     return;
   }
 
@@ -190,6 +194,9 @@ async function checkSession() {
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     initAdminPanel();
+  } else {
+    const layout = document.getElementById('adminLayout');
+    if (layout) layout.style.display = 'none';
   }
 }
 
@@ -1881,8 +1888,16 @@ function bootAdmin() {
   try {
     initBindings();
     if (REQUIRE_AUTH) {
-      sb.auth.onAuthStateChange((_event, session) => {
-        if (session) initAdminPanel();
+      sb.auth.onAuthStateChange((event, session) => {
+        if (session) {
+          initAdminPanel();
+        } else if (event === 'SIGNED_OUT') {
+          setAuthMode(true);
+          const layout = document.getElementById('adminLayout');
+          if (layout) layout.style.display = 'none';
+          const loginEl = document.getElementById('loginScreen');
+          if (loginEl) loginEl.hidden = false;
+        }
       });
       setupAuth();
       checkSession();
@@ -1893,7 +1908,9 @@ function bootAdmin() {
     window.dispatchEvent(new CustomEvent('admin-ready'));
   } catch (err) {
     console.error(err);
-    document.getElementById('adminLayout').style.display = 'flex';
+    if (!REQUIRE_AUTH) {
+      document.getElementById('adminLayout').style.display = 'flex';
+    }
     showToast('Error al iniciar el panel: ' + err.message, 'error');
   }
 }

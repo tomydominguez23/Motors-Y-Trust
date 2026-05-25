@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trust Motors | Panel de Administración</title>
+  <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=9">
+  <link rel="stylesheet" href="admin.css?v=10">
   <style>
-    #adminLayout { display: flex !important; min-height: 100vh; }
     .pages-viewport { flex: 1; width: 100%; min-height: 50vh; }
     .pages-viewport > .page:not(.active) {
       display: none !important;
@@ -27,7 +27,38 @@
     }
   </style>
 </head>
-<body>
+<body class="admin-requires-auth">
+
+  <!-- Login -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="logo-trust">TRUST</span>
+        <span class="logo-motors">MOTORS</span>
+      </div>
+      <p class="login-subtitle">Acceso al panel de administración</p>
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="admin@trustmotors.cl" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+        <div class="login-error" id="loginError"></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Iniciar sesión</button>
+        <div class="login-alt-actions">
+          <button type="button" class="btn btn-link" id="btnResetPassword">Restablecer contraseña</button>
+          <span class="login-alt-sep">·</span>
+          <button type="button" class="btn btn-link" id="btnMagicLink">Enviar enlace al correo</button>
+        </div>
+      </form>
+      <p class="login-hint">
+        Solo personal autorizado. El usuario debe existir en <strong>Supabase → Authentication → Users</strong>.
+      </p>
+    </div>
+  </div>
 
   <!-- Admin Layout -->
   <div class="admin-layout" id="adminLayout">
@@ -74,7 +105,12 @@
         </button>
       </nav>
 
-      <div class="sidebar-footer" id="sidebarFooterAuth" style="display:none;"></div>
+      <div class="sidebar-footer">
+        <button type="button" class="sidebar-link" id="btnLogout">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          Cerrar sesión
+        </button>
+      </div>
     </aside>
 
     <!-- Main Content -->
@@ -485,6 +521,6 @@
       window.adminSwitchPage = switchPage;
     })();
   </script>
-  <script src="admin.js?v=12"></script>
+  <script src="admin.js?v=13"></script>
 </body>
 </html>

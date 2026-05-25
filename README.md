@@ -34,17 +34,19 @@ Para que cada cambio en `main` se publique solo en tu cPanel:
 2. Configura los **secrets** de FTP en GitHub (`CPANEL_FTP_HOST`, `CPANEL_FTP_USERNAME`, etc.)
 3. El workflow `.github/workflows/deploy-cpanel.yml` sube el sitio al hacer merge/push a `main`
 
-### Panel admin sin login (temporal)
+### Panel admin protegido (login obligatorio)
 
-Por defecto el panel abre **sin pedir contraseña** (`REQUIRE_AUTH = false` en `admin/admin.js`).
+El panel (`panel.html`) exige **email y contraseña** (`REQUIRE_AUTH = true` en `panel.js`).
 
-Para que Supabase permita guardar datos sin sesión, ejecuta una vez `sql/open_admin_no_auth.sql` en el SQL Editor.
+1. Ejecuta **`sql/lock_admin_auth.sql`** en Supabase → SQL Editor (quita acceso anónimo al panel).
+2. Crea tu usuario en **Authentication → Users → Add user** (marca **Auto Confirm User**).
+3. Entra en **https://trustmotors.cl/panel.html** con ese email y contraseña.
 
-Cuando quieras proteger el panel de nuevo, cambia `REQUIRE_AUTH` a `true` y elimina las políticas «Temporal: anon …» en Supabase.
+El enlace al panel ya no aparece en el pie del sitio público.
 
-### Acceso al panel admin con login (Supabase Auth)
+### Acceso al panel (Supabase Auth)
 
-Con `REQUIRE_AUTH = true`, el login usa **Supabase Authentication**, no la tabla `customers`:
+El login usa **Supabase Authentication**, no la tabla `customers`:
 
 1. En el dashboard de Supabase: **Authentication → Users → Add user**
 2. Indica email y contraseña, y activa **Auto Confirm User** (o confirma el correo manualmente)
