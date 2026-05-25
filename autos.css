@@ -543,12 +543,28 @@
   }
 }
 
+@media (max-width: 768px) {
+  .catalog-layout {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+
+  .catalog-topbar {
+    padding: 1rem 0 1.25rem;
+  }
+
+  .catalog-card-actions .btn {
+    min-height: 48px;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 480px) {
   .catalog-page { padding-top: 64px; }
 
   .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
 
   .catalog-topbar-inner {
