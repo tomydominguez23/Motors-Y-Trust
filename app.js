@@ -518,10 +518,72 @@ function closeModal() {
 
 /* ── Site images (logo, banners) ─────── */
 
+const HERO_CAR_FALLBACK = 'images/hero-eclipse-cross.jpg';
+const HERO_CAR_CACHE_KEY = 'trustmotors_hero_car';
+
+function applyHeroCarImage(url) {
+  const showcase = document.getElementById('heroCarShowcase') || document.querySelector('.hero-car-showcase');
+  const img = document.getElementById('heroCarImage') || showcase?.querySelector('.hero-car-photo');
+  if (!showcase || !img) return;
+
+  const remote = (url || '').trim();
+  const resolved = remote || HERO_CAR_FALLBACK;
+
+  try {
+    if (remote) sessionStorage.setItem(HERO_CAR_CACHE_KEY, remote);
+    else sessionStorage.removeItem(HERO_CAR_CACHE_KEY);
+  } catch (_) { /* quota / private mode */ }
+
+  const done = () => {
+    showcase.classList.remove('is-pending', 'is-loading');
+    showcase.classList.add('is-ready');
+  };
+
+  let currentSrc = '';
+  try {
+    currentSrc = img.src ? new URL(img.src, window.location.href).href : '';
+  } catch (_) {
+    currentSrc = img.getAttribute('src') || '';
+  }
+  let resolvedSrc = '';
+  try {
+    resolvedSrc = new URL(resolved, window.location.href).href;
+  } catch (_) {
+    resolvedSrc = resolved;
+  }
+  if (currentSrc && currentSrc === resolvedSrc) {
+    done();
+    return;
+  }
+
+  showcase.classList.add('is-loading');
+  img.classList.add('hero-banner-img');
+  img.alt = 'Vehículo destacado Trust Motors';
+  img.loading = 'eager';
+
+  img.onload = () => done();
+  img.onerror = () => {
+    if (resolved !== HERO_CAR_FALLBACK) {
+      img.onerror = () => done();
+      img.src = HERO_CAR_FALLBACK;
+    } else {
+      done();
+    }
+  };
+
+  img.src = resolved;
+}
+
 async function applySiteSettings() {
-  if (!supabaseClient) return;
+  if (!supabaseClient) {
+    applyHeroCarImage('');
+    return;
+  }
   const { data, error } = await supabaseClient.from('site_settings').select('key, value');
-  if (error || !data?.length) return;
+  if (error || !data?.length) {
+    applyHeroCarImage('');
+    return;
+  }
 
   const settings = {};
   data.forEach((row) => { if (row.value) settings[row.key] = row.value; });
@@ -532,15 +594,7 @@ async function applySiteSettings() {
     });
   }
 
-  const heroCarUrl = settings.hero_car || settings.hero_banner;
-  const showcase = document.querySelector('.hero-car-showcase');
-  if (showcase) {
-    if (heroCarUrl) {
-      showcase.innerHTML = `<img src="${heroCarUrl}" alt="Vehículo destacado Trust Motors" class="hero-car-photo hero-banner-img" loading="eager">`;
-    } else if (!showcase.querySelector('.hero-car-photo')) {
-      showcase.innerHTML = `<img src="images/hero-eclipse-cross.jpg" alt="Mitsubishi Eclipse Cross RX 1.5" class="hero-car-photo" loading="eager">`;
-    }
-  }
+  applyHeroCarImage(settings.hero_car || settings.hero_banner || '');
 
   if (settings.hero_background) {
     const hero = document.querySelector('.hero');
@@ -563,10 +617,11 @@ async function applySiteSettings() {
 
 async function init() {
   bindUiHandlers();
-  await Promise.all([
-    fetchVehicles(),
-    applySiteSettings().catch((err) => console.warn('Trust Motors: site_settings', err)),
-  ]);
+  await applySiteSettings().catch((err) => {
+    console.warn('Trust Motors: site_settings', err);
+    applyHeroCarImage('');
+  });
+  await fetchVehicles();
   populateHomeSearchBrands();
   if (document.getElementById('featuredGrid')) {
     renderFeatured();

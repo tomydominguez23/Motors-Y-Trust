@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 
@@ -65,17 +65,33 @@
         </div>
       </div>
       <a href="autos.html" class="hero-visual" aria-label="Ver catálogo de vehículos">
-        <div class="hero-car-showcase">
+        <div class="hero-car-showcase is-pending" id="heroCarShowcase">
           <img
-            src="images/hero-eclipse-cross.jpg"
-            alt="Mitsubishi Eclipse Cross RX 1.5"
+            id="heroCarImage"
             class="hero-car-photo"
+            alt="Vehículo destacado Trust Motors"
             width="1280"
             height="658"
             loading="eager"
             fetchpriority="high"
+            decoding="async"
           >
         </div>
+        <script>
+          (function () {
+            try {
+              var cached = sessionStorage.getItem('trustmotors_hero_car');
+              if (!cached) return;
+              var img = document.getElementById('heroCarImage');
+              var box = document.getElementById('heroCarShowcase');
+              if (img && cached) {
+                img.src = cached;
+                box && box.classList.remove('is-pending');
+                box && box.classList.add('is-ready');
+              }
+            } catch (e) { /* ignore */ }
+          })();
+        </script>
       </a>
     </div>
   </section>
@@ -374,6 +390,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="finance-utils.js?v=1"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

@@ -342,6 +342,27 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   max-width: 560px;
 }
 
+.hero-car-showcase.is-pending .hero-car-photo {
+  opacity: 0;
+  min-height: min(240px, 42vw);
+}
+
+.hero-car-showcase.is-loading .hero-car-photo {
+  opacity: 0.35;
+}
+
+.hero-car-showcase.is-ready .hero-car-photo,
+.hero-car-showcase:not(.is-pending) .hero-car-photo {
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+.hero-car-showcase.is-pending {
+  background: var(--color-bg-soft);
+  border-radius: var(--radius-lg);
+  min-height: min(240px, 42vw);
+}
+
 /* ── Car Platform / Showcase ─────────── */
 
 .car-platform {
