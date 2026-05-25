@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
 
@@ -77,6 +77,56 @@
           >
         </div>
       </a>
+    </div>
+  </section>
+
+  <!-- Buscador rápido (catálogo completo en autos.html) -->
+  <section class="search-section" aria-label="Buscar vehículos">
+    <div class="container">
+      <form class="search-bar" id="homeSearchForm" action="autos.html" method="get">
+        <div class="search-field">
+          <label for="filterBrand">Marca</label>
+          <select id="filterBrand" name="marca">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="search-field">
+          <label for="filterType">Tipo</label>
+          <select id="filterType" name="tipo">
+            <option value="">Todos</option>
+            <option value="SUV">SUV</option>
+            <option value="Sedán">Sedán</option>
+            <option value="Hatchback">Hatchback</option>
+            <option value="Pickup">Pickup</option>
+          </select>
+        </div>
+        <div class="search-field">
+          <label for="filterPrice">Precio máx.</label>
+          <select id="filterPrice" name="precio">
+            <option value="">Sin límite</option>
+            <option value="8000000">$8.000.000</option>
+            <option value="12000000">$12.000.000</option>
+            <option value="16000000">$16.000.000</option>
+            <option value="20000000">$20.000.000</option>
+            <option value="25000000">$25.000.000</option>
+          </select>
+        </div>
+        <div class="search-field">
+          <label for="filterYear">Año desde</label>
+          <select id="filterYear" name="anio">
+            <option value="">Cualquiera</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+            <option value="2020">2020</option>
+            <option value="2018">2018</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-search" id="btnSearch">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Buscar
+        </button>
+      </form>
     </div>
   </section>
 

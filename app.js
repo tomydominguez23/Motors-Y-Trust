@@ -355,6 +355,18 @@ function renderVehicles() {
   }
 }
 
+function populateHomeSearchBrands() {
+  const select = document.getElementById('filterBrand');
+  if (!select || select.options.length > 1) return;
+  const brands = [...new Set(allVehicles.map((v) => v.brand).filter(Boolean))].sort();
+  brands.forEach((brand) => {
+    const opt = document.createElement('option');
+    opt.value = brand;
+    opt.textContent = brand;
+    select.appendChild(opt);
+  });
+}
+
 function renderFeatured() {
   const grid = document.getElementById('featuredGrid');
   const empty = document.getElementById('featuredEmpty');
@@ -555,6 +567,7 @@ async function init() {
     fetchVehicles(),
     applySiteSettings().catch((err) => console.warn('Trust Motors: site_settings', err)),
   ]);
+  populateHomeSearchBrands();
   if (document.getElementById('featuredGrid')) {
     renderFeatured();
   } else if (document.getElementById('vehiclesGrid')) {

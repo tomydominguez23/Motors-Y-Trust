@@ -380,10 +380,43 @@ function bindCatalogUi() {
   }
 }
 
+function applyCatalogUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const marca = params.get('marca');
+  const precio = params.get('precio');
+  const anio = params.get('anio');
+  const tipo = params.get('tipo');
+
+  if (marca) {
+    const el = document.getElementById('catBrand');
+    if (el) el.value = marca;
+    filters.brand = marca;
+  }
+  if (precio) {
+    const el = document.getElementById('catPriceMax');
+    if (el) el.value = precio;
+    filters.maxPrice = precio;
+  }
+  if (anio) {
+    const el = document.getElementById('catYear');
+    if (el) el.value = anio;
+    filters.minYear = anio;
+  }
+  if (tipo) {
+    filters.type = tipo;
+    const chip = document.querySelector(`.type-chip[data-type="${tipo}"]`);
+    if (chip) {
+      document.querySelectorAll('.type-chip').forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+    }
+  }
+}
+
 async function initCatalog() {
   bindCatalogUi();
   allVehicles = await fetchVehicles();
   populateFilterOptions();
+  applyCatalogUrlParams();
   renderCatalog();
 }
 
