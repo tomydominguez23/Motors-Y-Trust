@@ -8,12 +8,17 @@
     return vehicleStatus(vehicle) === 'reservado';
   }
 
+  function reservedOverlayHtml() {
+    return (
+      '<div class="vehicle-reserved-overlay" role="status">' +
+      '<span class="vehicle-reserved-label">Reservado</span>' +
+      '</div>'
+    );
+  }
+
   function vehicleImageBadgesHtml(vehicle) {
     if (isReserved(vehicle)) {
-      return (
-        '<span class="vehicle-badge reserved reserved--center reserved--btn" role="status">' +
-        'Reservado</span>'
-      );
+      return reservedOverlayHtml();
     }
     if (vehicle.is_featured) {
       return '<span class="vehicle-badge featured">Destacado</span>';
@@ -25,5 +30,6 @@
     vehicleStatus,
     isReserved,
     vehicleImageBadgesHtml,
+    reservedOverlayHtml,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

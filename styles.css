@@ -655,51 +655,45 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   color: #b45309;
 }
 
-.vehicle-badge.reserved {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.vehicle-card-image:has(.vehicle-badge.reserved),
-.catalog-card-media:has(.vehicle-badge.reserved),
-.vd-gallery-main-wrap:has(.vehicle-badge.reserved),
-.vd-related-media:has(.vehicle-badge.reserved) {
-  position: relative;
-}
-
-.vehicle-card-image:has(.vehicle-badge.reserved)::before,
-.catalog-card-media:has(.vehicle-badge.reserved)::before,
-.vd-gallery-main-wrap:has(.vehicle-badge.reserved)::before,
-.vd-related-media:has(.vehicle-badge.reserved)::before {
-  content: '';
+/* Reservado: capa completa + etiqueta grande centrada */
+.vehicle-reserved-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.28);
-  z-index: 4;
-  pointer-events: none;
-  border-radius: inherit;
-}
-
-.vehicle-badge.reserved--center {
-  top: 50%;
-  left: 50%;
-  right: auto;
-  transform: translate(-50%, -50%);
-  z-index: 6;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.42);
   pointer-events: none;
 }
 
-.vehicle-badge.reserved--btn {
-  padding: 0.55rem 1.6rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  border-radius: 999px;
-  letter-spacing: 0.12em;
+.vehicle-reserved-label {
+  display: inline-block;
+  padding: 0.85rem 2rem;
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #fff;
+  line-height: 1.1;
+  text-align: center;
   background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-  border: 2px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+}
+
+.catalog-card-media .vehicle-reserved-label,
+.vd-gallery-main-wrap .vehicle-reserved-label {
+  font-size: clamp(1.25rem, 5.5vw, 1.85rem);
+  padding: 1rem 2.5rem;
+}
+
+.price--reserved,
+.vehicle-price--reserved,
+.vd-price--reserved {
+  color: #d97706 !important;
+  font-weight: 800;
 }
 
 .vehicle-badge.offer {

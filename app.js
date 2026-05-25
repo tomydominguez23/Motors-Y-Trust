@@ -240,9 +240,10 @@ function createVehicleCard(vehicle) {
   card.dataset.price = vehicle.price;
   card.dataset.year = vehicle.year;
 
+  const reserved = window.TrustVehicleBadges?.isReserved(vehicle);
   const badgeHTML = window.TrustVehicleBadges?.vehicleImageBadgesHtml(vehicle) || '';
 
-  const monthly = window.TrustFinance?.getVehicleMonthlyPayment(vehicle);
+  const monthly = !reserved ? window.TrustFinance?.getVehicleMonthlyPayment(vehicle) : null;
   const financeLine = monthly
     ? `<span class="vehicle-finance-line">Desde ${formatPrice(monthly)}/mes*</span>`
     : '';
@@ -276,8 +277,8 @@ function createVehicleCard(vehicle) {
       </div>
       <div class="vehicle-card-footer">
         <div>
-          <span class="vehicle-price">${formatPrice(vehicle.price)}</span>
-          <span class="vehicle-price-sub">Precio contado</span>
+          <span class="vehicle-price${reserved ? ' vehicle-price--reserved' : ''}">${reserved ? 'Reservado' : formatPrice(vehicle.price)}</span>
+          <span class="vehicle-price-sub">${reserved ? 'No disponible para venta' : 'Precio contado'}</span>
           ${financeLine}
         </div>
         <a href="${whatsappVehicleUrl(vehicle)}" class="btn btn-whatsapp btn-view-detail" target="_blank" rel="noopener">WhatsApp</a>

@@ -163,13 +163,14 @@ function getFilteredSorted() {
 }
 
 function createCatalogCard(vehicle) {
+  const reserved = window.TrustVehicleBadges?.isReserved(vehicle);
   const card = document.createElement('article');
-  card.className = 'catalog-card';
+  card.className = 'catalog-card' + (reserved ? ' catalog-card--reserved' : '');
 
   const photos = vehicle.images && vehicle.images.length ? vehicle.images : [];
   const cover = photos[0];
   const photoCount = photos.length;
-  const financiable = isFinanciable(vehicle);
+  const financiable = !reserved && isFinanciable(vehicle);
   const monthly = financiable ? window.TrustFinance.getVehicleMonthlyPayment(vehicle) : null;
 
   const mediaHtml = cover
@@ -204,8 +205,8 @@ function createCatalogCard(vehicle) {
           <div class="year">${vehicle.year}</div>
         </div>
         <div>
-          <span class="label">Precio</span>
-          <div class="price">${formatPrice(vehicle.price)}</div>
+          <span class="label">${reserved ? 'Estado' : 'Precio'}</span>
+          <div class="price${reserved ? ' price--reserved' : ''}">${reserved ? 'Reservado' : formatPrice(vehicle.price)}</div>
         </div>
       </div>
       ${monthly ? `<p class="catalog-card-finance">Desde ${formatPrice(monthly)}/mes*</p>` : ''}

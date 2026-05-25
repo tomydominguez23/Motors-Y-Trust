@@ -165,7 +165,7 @@ const ICONS = {
 function updateGalleryReservedBadge() {
   const wrap = document.querySelector('.vd-gallery-main-wrap');
   if (!wrap) return;
-  wrap.querySelector('.vehicle-badge.reserved--center')?.remove();
+  wrap.querySelector('.vehicle-reserved-overlay')?.remove();
   if (currentVehicle && window.TrustVehicleBadges?.isReserved(currentVehicle)) {
     wrap.insertAdjacentHTML(
       'beforeend',
@@ -284,12 +284,19 @@ function renderVehicle(vehicle) {
   document.getElementById('vdTitle').textContent = `${vehicle.brand} ${vehicle.model}`;
   document.getElementById('vdSubtitle').textContent =
     `${vehicle.brand} ${vehicle.model}`.toUpperCase();
-  document.getElementById('vdPrice').textContent = formatPrice(vehicle.price);
+  const priceEl = document.getElementById('vdPrice');
+  const reserved = window.TrustVehicleBadges?.isReserved(vehicle);
+  if (priceEl) {
+    priceEl.textContent = reserved ? 'Reservado' : formatPrice(vehicle.price);
+    priceEl.classList.toggle('vd-price--reserved', reserved);
+  }
 
   const financeBox = document.getElementById('vdFinanceBox');
-  const monthly = window.TrustFinance?.getVehicleMonthlyPayment(vehicle);
+  const monthly = !reserved ? window.TrustFinance?.getVehicleMonthlyPayment(vehicle) : null;
   if (financeBox) {
-    if (monthly) {
+    if (reserved) {
+      financeBox.hidden = true;
+    } else if (monthly) {
       financeBox.hidden = false;
       document.getElementById('vdFinanceAmount').textContent = formatPrice(monthly);
       const noteEl = document.getElementById('vdFinanceNote');
@@ -315,9 +322,9 @@ function renderVehicle(vehicle) {
   ].join('');
 
   const financeTxt = monthly ? ` Cuota referencial: ${formatPrice(monthly)}/mes.` : '';
+  const priceTxt = reserved ? ' (reservado)' : ` (${formatPrice(vehicle.price)})`;
   const msg = encodeURIComponent(
-    `Hola, me interesa el ${vehicle.brand} ${vehicle.model} ${vehicle.year} ` +
-    `(${formatPrice(vehicle.price)}).${financeTxt} Publicado en Trust Motors. ` +
+    `Hola, me interesa el ${vehicle.brand} ${vehicle.model} ${vehicle.year}${priceTxt}.${financeTxt} Publicado en Trust Motors. ` +
     window.location.href
   );
   document.getElementById('vdWhatsApp').href =
