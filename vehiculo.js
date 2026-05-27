@@ -405,6 +405,10 @@ window.addEventListener('scroll', () => {
 });
 
 document.addEventListener('keydown', (e) => {
+  if (document.getElementById('vdVisitOverlay')?.classList.contains('active')) {
+    if (e.key === 'Escape') closeVisitModal();
+    return;
+  }
   if (galleryPhotos.length < 2) return;
   if (e.key === 'ArrowLeft') {
     document.getElementById('vdPrev')?.click();
@@ -414,4 +418,201 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+/* ── Agendar visita ───────────────────── */
+
+const VISIT_HOURS = { start: 10, end: 19, stepMinutes: 30 };
+const VISIT_MAX_DAYS_AHEAD = 21;
+
+function chileDateISO(date = new Date()) {
+  return date.toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+}
+
+function formatVisitDateTime(iso) {
+  return new Intl.DateTimeFormat('es-CL', {
+    timeZone: 'America/Santiago',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(iso));
+}
+
+function buildVisitTimeOptions() {
+  const select = document.getElementById('vdVisitTime');
+  if (!select) return;
+  const options = ['<option value="">Selecciona hora</option>'];
+  for (let h = VISIT_HOURS.start; h < VISIT_HOURS.end; h++) {
+    for (let m = 0; m < 60; m += VISIT_HOURS.stepMinutes) {
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      options.push(`<option value="${hh}:${mm}">${hh}:${mm}</option>`);
+    }
+  }
+  select.innerHTML = options.join('');
+}
+
+function setupVisitDateInput() {
+  const input = document.getElementById('vdVisitDate');
+  if (!input) return;
+  const today = chileDateISO();
+  input.min = today;
+  const max = new Date();
+  max.setDate(max.getDate() + VISIT_MAX_DAYS_AHEAD);
+  input.max = chileDateISO(max);
+  if (!input.value) input.value = today;
+}
+
+function normalizePhone(phone) {
+  const digits = String(phone).replace(/\D/g, '');
+  if (digits.length === 9 && digits.startsWith('9')) return '56' + digits;
+  if (digits.startsWith('56')) return digits;
+  return digits;
+}
+
+function buildScheduledAtISO(dateStr, timeStr) {
+  return `${dateStr}T${timeStr}:00-03:00`;
+}
+
+function openVisitModal() {
+  if (!currentVehicle) return;
+  const overlay = document.getElementById('vdVisitOverlay');
+  const form = document.getElementById('vdVisitForm');
+  const success = document.getElementById('vdVisitSuccess');
+  const err = document.getElementById('vdVisitError');
+  if (!overlay || !form) return;
+
+  document.getElementById('vdVisitVehicleLabel').textContent =
+    `${currentVehicle.brand} ${currentVehicle.model} ${currentVehicle.year}`;
+  form.hidden = false;
+  if (success) success.hidden = true;
+  if (err) err.hidden = true;
+  form.reset();
+  setupVisitDateInput();
+  overlay.classList.add('active');
+  document.body.classList.add('vd-visit-open');
+  document.getElementById('vdVisitName')?.focus();
+}
+
+function closeVisitModal() {
+  const overlay = document.getElementById('vdVisitOverlay');
+  overlay?.classList.remove('active');
+  document.body.classList.remove('vd-visit-open');
+}
+
+async function submitVisitBooking(e) {
+  e.preventDefault();
+  if (!currentVehicle || !supabaseClient) {
+    showVisitError('No pudimos registrar la visita. Intenta por WhatsApp.');
+    return;
+  }
+
+  const name = document.getElementById('vdVisitName')?.value.trim();
+  const phone = document.getElementById('vdVisitPhone')?.value.trim();
+  const email = document.getElementById('vdVisitEmail')?.value.trim();
+  const date = document.getElementById('vdVisitDate')?.value;
+  const time = document.getElementById('vdVisitTime')?.value;
+  const notes = document.getElementById('vdVisitNotes')?.value.trim();
+  const submitBtn = document.getElementById('vdVisitSubmit');
+  const errEl = document.getElementById('vdVisitError');
+
+  if (!name || !phone || !date || !time) {
+    showVisitError('Completa nombre, teléfono, fecha y hora.');
+    return;
+  }
+
+  const phoneNorm = normalizePhone(phone);
+  if (phoneNorm.length < 11) {
+    showVisitError('Ingresa un teléfono válido (ej. +56 9 1234 5678).');
+    return;
+  }
+
+  const scheduled_at = buildScheduledAtISO(date, time);
+  if (new Date(scheduled_at) < new Date()) {
+    showVisitError('Elige una fecha y hora futuras.');
+    return;
+  }
+
+  const payload = {
+    vehicle_id: currentVehicle.id,
+    customer_name: name,
+    customer_phone: phoneNorm,
+    customer_email: email || '',
+    scheduled_at,
+    notes: notes || '',
+    status: 'pending',
+  };
+
+  submitBtn.disabled = true;
+  errEl.hidden = true;
+
+  const { error } = await supabaseClient.from('visit_appointments').insert(payload);
+
+  if (error) {
+    submitBtn.disabled = false;
+    if (error.code === '42P01') {
+      showVisitError('El sistema de visitas aún no está activado. Contáctanos por WhatsApp.');
+    } else {
+      showVisitError('No pudimos guardar la visita. Intenta de nuevo.');
+    }
+    return;
+  }
+
+  const vehicleLabel = `${currentVehicle.brand} ${currentVehicle.model} ${currentVehicle.year}`;
+  let notified = false;
+
+  try {
+    const { data: notifyData } = await supabaseClient.functions.invoke('notify-visit-booking', {
+      body: {
+        notify: {
+          ...payload,
+          vehicle_label: vehicleLabel,
+        },
+      },
+    });
+    notified = !!notifyData?.ok;
+  } catch {
+    notified = false;
+  }
+
+  submitBtn.disabled = false;
+  showVisitSuccess(scheduled_at, notified);
+}
+
+function showVisitError(msg) {
+  const errEl = document.getElementById('vdVisitError');
+  if (!errEl) return;
+  errEl.textContent = msg;
+  errEl.hidden = false;
+}
+
+function showVisitSuccess(scheduledAt, whatsappSent) {
+  const form = document.getElementById('vdVisitForm');
+  const success = document.getElementById('vdVisitSuccess');
+  const text = document.getElementById('vdVisitSuccessText');
+  if (!form || !success || !text) return;
+
+  form.hidden = true;
+  success.hidden = false;
+  const when = formatVisitDateTime(scheduledAt);
+  text.textContent = whatsappSent
+    ? `Tu visita quedó registrada para el ${when}. Te enviamos la confirmación al concesionario y pronto te contactaremos.`
+    : `Tu visita quedó registrada para el ${when}. Te contactaremos pronto para confirmar.`;
+}
+
+function setupVisitBooking() {
+  buildVisitTimeOptions();
+  setupVisitDateInput();
+
+  document.getElementById('vdScheduleBtn')?.addEventListener('click', openVisitModal);
+  document.getElementById('vdVisitClose')?.addEventListener('click', closeVisitModal);
+  document.getElementById('vdVisitSuccessClose')?.addEventListener('click', closeVisitModal);
+  document.getElementById('vdVisitOverlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeVisitModal();
+  });
+  document.getElementById('vdVisitForm')?.addEventListener('submit', submitVisitBooking);
+}
+
 init();
+setupVisitBooking();
