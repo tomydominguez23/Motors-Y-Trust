@@ -331,26 +331,164 @@
   margin-bottom: 1.25rem;
 }
 
+.vd-cta-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.vd-btn-schedule,
 .vd-btn-whatsapp {
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  background: var(--color-success);
-  color: #fff;
+  gap: 0.45rem;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   letter-spacing: 0.02em;
-  padding: 0.95rem 1rem;
+  padding: 0.85rem 0.65rem;
   border-radius: 10px;
   min-height: 48px;
   transition: var(--transition);
+  width: 100%;
+}
+
+.vd-btn-schedule {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.vd-btn-schedule:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.vd-btn-whatsapp {
+  background: var(--color-success);
+  color: #fff;
 }
 
 .vd-btn-whatsapp:hover {
   filter: brightness(1.05);
   transform: translateY(-1px);
+}
+
+.vd-visit-overlay {
+  z-index: 220;
+  padding: 1rem;
+}
+
+.vd-visit-modal {
+  max-width: 480px;
+  max-height: min(92vh, 720px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.vd-visit-modal-inner {
+  padding: 1.5rem 1.25rem 1.25rem;
+  overflow-y: auto;
+}
+
+.vd-visit-modal-inner h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+  padding-right: 2rem;
+}
+
+.vd-visit-subtitle {
+  font-size: 0.88rem;
+  color: var(--color-text-light);
+  margin-bottom: 1.1rem;
+}
+
+.vd-visit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.vd-visit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.vd-visit-field label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: var(--color-text);
+}
+
+.vd-visit-optional {
+  font-weight: 400;
+  color: var(--color-text-light);
+}
+
+.vd-visit-field input,
+.vd-visit-field select,
+.vd-visit-field textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.vd-visit-field input:focus,
+.vd-visit-field select:focus,
+.vd-visit-field textarea:focus {
+  outline: 2px solid var(--color-accent-light);
+  border-color: var(--color-accent);
+}
+
+.vd-visit-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-light);
+  line-height: 1.4;
+}
+
+.vd-visit-error {
+  font-size: 0.82rem;
+  color: #dc2626;
+  background: #fef2f2;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+}
+
+.vd-visit-submit {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.vd-visit-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.vd-visit-success {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.vd-visit-success-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+}
+
+.vd-visit-success p {
+  color: var(--color-text-light);
+  margin-bottom: 1rem;
+}
+
+body.vd-visit-open {
+  overflow: hidden;
 }
 
 .vd-header-wa {
@@ -454,8 +592,6 @@
 }
 
 .vd-related-card {
-  display: flex;
-  flex-direction: column;
   background: #fff;
   border-radius: var(--radius);
   overflow: hidden;
@@ -470,29 +606,20 @@
 
 .vd-related-media {
   position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  flex-shrink: 0;
+  height: 140px;
   overflow: hidden;
   background: #f3f4f6;
 }
 
-.vd-related-media img {
-  position: absolute;
-  inset: 0;
+.vd-related-media img,
+.vd-related-media .vd-related-svg {
   width: 100%;
   height: 100%;
-  max-width: none;
   object-fit: cover;
-  object-position: center;
   display: block;
 }
 
-.vd-related-media .vd-related-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+.vd-related-card .vd-related-svg {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -510,11 +637,6 @@
 .vd-related-body h3 {
   font-size: 0.95rem;
   margin-bottom: 0.25rem;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
 }
 
 .vd-related-body p {
@@ -617,22 +739,12 @@
     gap: 0.75rem;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
     padding-bottom: 0.5rem;
-    align-items: stretch;
   }
 
   .vd-related-card {
-    width: min(78vw, 280px);
-    min-width: min(78vw, 280px);
-    flex: 0 0 auto;
-    scroll-snap-align: start;
-  }
-
-  .vd-related-media {
-    aspect-ratio: 4 / 3;
-    height: auto;
-    min-height: 0;
+    min-width: 220px;
+    flex-shrink: 0;
   }
 
   /* WhatsApp fijo al pie en móvil */
@@ -651,8 +763,35 @@
     border-top: 1px solid var(--color-border);
   }
 
-  .vd-cta-wrap .vd-btn-whatsapp {
+  .vd-cta-actions {
+    gap: 0.45rem;
+  }
+
+  .vd-btn-schedule,
+  .vd-btn-whatsapp {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
+    padding: 0.75rem 0.4rem;
+  }
+
+  .vd-visit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .vd-visit-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .vd-visit-modal {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .vd-cta-actions {
+    grid-template-columns: 1fr;
   }
 }

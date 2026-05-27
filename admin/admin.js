@@ -322,6 +322,7 @@ const pageMap = {
   sales: { el: 'pageSales', title: 'Ventas', load: loadSales },
   customers: { el: 'pageCustomers', title: 'Clientes', load: loadCustomers },
   inquiries: { el: 'pageInquiries', title: 'Consultas', load: loadInquiries },
+  visits: { el: 'pageVisits', title: 'Visitas', load: loadVisits },
   expenses: { el: 'pageExpenses', title: 'Gastos', load: loadExpenses },
 };
 
@@ -1274,7 +1275,7 @@ async function loadSiteMedia() {
           <input type="hidden" class="site-asset-url" value="${escapeHtml(url)}">
           <div class="site-media-actions">
             <input type="file" class="site-asset-file" accept="image/*" hidden>
-            <button type="button" class="btn btn-outline btn-sm btn-site-upload" ${bucketOk ? '' : 'disabled title="Ejecuta setup_completo.sql"'}>Subir</button>
+            <button type="button" class="btn btn-outline btn-sm btn-site-upload" ${bucketOk ? '' : 'disabled title="Ejecuta sql/site_imagenes_hero.sql"'}>Subir</button>
             <input type="url" class="site-asset-url-input" placeholder="https://…" value="${escapeHtml(url)}">
             <button type="button" class="btn btn-primary btn-sm btn-site-save">Guardar</button>
             <button type="button" class="btn btn-outline btn-sm btn-site-clear" title="Volver a imagen por defecto del servidor">Quitar</button>
@@ -1707,6 +1708,102 @@ window.deleteInquiry = async function(id) {
   showToast('Consulta eliminada', 'success');
   loadInquiries();
 };
+
+/* ── Visitas agendadas ───────────────── */
+
+const visitStatusLabels = {
+  pending: 'Pendiente',
+  confirmed: 'Confirmada',
+  cancelled: 'Cancelada',
+  completed: 'Completada',
+};
+
+function formatDateTime(iso) {
+  if (!iso) return '—';
+  return new Intl.DateTimeFormat('es-CL', {
+    timeZone: 'America/Santiago',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(iso));
+}
+
+async function loadVisits() {
+  const { data, error } = await sb
+    .from('visit_appointments')
+    .select('*, vehicles(brand, model, year)')
+    .order('scheduled_at', { ascending: true });
+
+  if (error) {
+    showToast(error.code === '42P01' ? 'Ejecuta sql/visit_appointments.sql en Supabase' : 'Error cargando visitas', 'error');
+    return;
+  }
+
+  const list = data || [];
+  const unread = list.filter((v) => !v.is_read && v.status === 'pending').length;
+  const countEl = document.getElementById('visitCount');
+  if (countEl) {
+    countEl.textContent = unread;
+    countEl.style.display = unread > 0 ? 'inline-flex' : 'none';
+  }
+
+  const tbody = document.getElementById('visitsBody');
+  if (!tbody) return;
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-muted" style="text-align:center;padding:2rem;">No hay visitas agendadas</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((v) => {
+    const veh = v.vehicles ? `${v.vehicles.brand} ${v.vehicles.model} ${v.vehicles.year}` : '—';
+    const phone = String(v.customer_phone || '').replace(/[^0-9]/g, '');
+    return `
+    <tr style="${!v.is_read ? 'background:#f8faff;' : ''}">
+      <td>${!v.is_read ? '<span class="unread-dot"></span>' : ''}</td>
+      <td>${formatDate(v.created_at)}</td>
+      <td><strong>${formatDateTime(v.scheduled_at)}</strong></td>
+      <td><strong>${v.customer_name}</strong></td>
+      <td>${v.customer_phone}</td>
+      <td>${veh}</td>
+      <td><span class="status-badge status-${v.status}">${visitStatusLabels[v.status] || v.status}</span></td>
+      <td>
+        <div class="table-actions">
+          ${v.status === 'pending' ? `<button class="btn btn-ghost btn-sm" onclick="confirmVisit('${v.id}')" title="Confirmar">✓</button>` : ''}
+          ${!v.is_read ? `<button class="btn btn-ghost btn-sm" onclick="markVisitRead('${v.id}')" title="Marcar leída">○</button>` : ''}
+          <a class="btn btn-ghost btn-sm" href="https://api.whatsapp.com/send?phone=${phone}" target="_blank" title="WhatsApp cliente" style="color:var(--success);">WA</a>
+          <button class="btn btn-ghost btn-sm" onclick="deleteVisit('${v.id}')" style="color:var(--danger);">×</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window.markVisitRead = async function(id) {
+  await sb.from('visit_appointments').update({ is_read: true }).eq('id', id);
+  loadVisits();
+};
+
+window.confirmVisit = async function(id) {
+  await sb.from('visit_appointments').update({ status: 'confirmed', is_read: true }).eq('id', id);
+  showToast('Visita confirmada', 'success');
+  loadVisits();
+};
+
+window.deleteVisit = async function(id) {
+  if (!confirm('¿Eliminar esta visita?')) return;
+  await sb.from('visit_appointments').update({ status: 'cancelled' }).eq('id', id);
+  showToast('Visita cancelada', 'success');
+  loadVisits();
+};
+
+document.getElementById('btnMarkAllVisitsRead')?.addEventListener('click', async () => {
+  await sb.from('visit_appointments').update({ is_read: true }).eq('is_read', false);
+  loadVisits();
+});
 
 /* ── Expenses CRUD ───────────────────── */
 
