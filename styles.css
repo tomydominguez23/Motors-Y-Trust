@@ -1057,11 +1057,62 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   color: #fff;
 }
 
+.footer-social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-social-link svg {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.footer-social-link:hover svg {
+  opacity: 1;
+}
+
+.footer-social-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.footer-social-icons a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  transition: var(--transition);
+}
+
+.footer-social-icons a:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
 .footer-bottom {
   border-top: 1px solid rgba(255,255,255,.1);
   padding-top: 1.5rem;
   text-align: center;
   font-size: .82rem;
+}
+
+.footer-bottom a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer-bottom a:hover {
+  color: #fff;
 }
 
 /* ── WhatsApp Float ──────────────────── */
