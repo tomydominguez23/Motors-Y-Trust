@@ -33,7 +33,7 @@ En **Project Settings → Edge Functions → Secrets**, configura al menos una o
 |--------|-------------|
 | `WHATSAPP_ACCESS_TOKEN` | Token permanente de la app Meta |
 | `WHATSAPP_PHONE_NUMBER_ID` | ID del número de WhatsApp Business |
-| `DEALER_WHATSAPP_PHONE` | Tu número (ej. `56948406684`) |
+| `DEALER_WHATSAPP_PHONE` | Tu número (ej. `56937265070`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Se inyecta automáticamente al desplegar |
 
 El número del negocio debe poder recibir mensajes desde tu cuenta Business (ventana de 24 h o plantilla aprobada).

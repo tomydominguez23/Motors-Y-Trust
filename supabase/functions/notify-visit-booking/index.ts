@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
     }
 
     const message = buildDealerMessage(apt, vehicle);
-    const dealerPhone = Deno.env.get('DEALER_WHATSAPP_PHONE') || '56948406684';
+    const dealerPhone = Deno.env.get('DEALER_WHATSAPP_PHONE') || '56937265070';
 
     const waToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN');
     const waPhoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID');
