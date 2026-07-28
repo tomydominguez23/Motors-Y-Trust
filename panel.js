@@ -319,6 +319,7 @@ const pageMap = {
   dashboard: { el: 'pageDashboard', title: 'Dashboard', load: loadDashboard },
   vehicles: { el: 'pageVehicles', title: 'Vehículos', load: loadVehicles },
   siteMedia: { el: 'pageSiteMedia', title: 'Imágenes del sitio', load: loadSiteMedia },
+  partners: { el: 'pagePartners', title: 'Partners', load: loadPartners },
   sales: { el: 'pageSales', title: 'Ventas', load: loadSales },
   customers: { el: 'pageCustomers', title: 'Clientes', load: loadCustomers },
   inquiries: { el: 'pageInquiries', title: 'Consultas', load: loadInquiries },
@@ -1372,6 +1373,218 @@ function updateSiteMediaPreview(card, url) {
     : '<div class="site-media-placeholder">Sin imagen</div>';
 }
 
+
+/* ── Partners CRUD ───────────────────── */
+
+async function loadPartners() {
+  const { data, error } = await sb
+    .from('partners')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  const tbody = document.getElementById('partnersBody');
+  if (!tbody) return;
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-muted" style="text-align:center;padding:2rem;color:var(--danger);">
+      ${error.code === '42P01' ? 'Ejecuta sql/partners.sql en Supabase' : escapeHtml(error.message)}
+    </td></tr>`;
+    return;
+  }
+
+  const list = data || [];
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="text-muted" style="text-align:center;padding:2rem;">No hay partners. Agrega el primero.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((p) => {
+    const thumb = p.logo_url
+      ? `<img src="${escapeHtml(p.logo_url)}" alt="" class="partner-admin-thumb">`
+      : '<span class="text-muted">—</span>';
+    const web = p.website_url
+      ? `<a href="${escapeHtml(p.website_url)}" target="_blank" rel="noopener">Abrir</a>`
+      : '—';
+    const status = p.is_active
+      ? '<span class="status-badge disponible">Activo</span>'
+      : '<span class="status-badge cancelada">Oculto</span>';
+    return `
+    <tr>
+      <td>${thumb}</td>
+      <td><strong>${escapeHtml(p.name)}</strong></td>
+      <td>${p.sort_order ?? 0}</td>
+      <td>${status}</td>
+      <td>${web}</td>
+      <td>
+        <div class="table-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editPartner('${p.id}')" title="Editar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="deletePartner('${p.id}')" style="color:var(--danger);" title="Eliminar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function partnerFormHTML(p = {}) {
+  const e = escapeHtml;
+  return `
+    <form class="modal-form" id="partnerForm">
+      <input type="hidden" id="pf_id" value="${e(p.id || '')}">
+      <input type="hidden" id="pf_logo_url" value="${e(p.logo_url || '')}">
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" id="pf_name" value="${e(p.name || '')}" required placeholder="Ej: Santander">
+      </div>
+      <div class="form-group">
+        <label>Logo</label>
+        <div class="partner-logo-upload">
+          <div class="partner-logo-preview" id="pf_preview">
+            ${p.logo_url ? `<img src="${e(p.logo_url)}" alt="">` : '<span class="text-muted">Sin logo</span>'}
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <input type="file" id="pf_file" accept="image/*" hidden>
+            <button type="button" class="btn btn-outline btn-sm" id="pf_upload_btn">Subir imagen</button>
+          </div>
+        </div>
+        <input type="url" id="pf_logo_url_input" value="${e(p.logo_url || '')}" placeholder="O pega una URL https://…">
+      </div>
+      <div class="form-group">
+        <label>Sitio web <span class="text-muted">(opcional)</span></label>
+        <input type="url" id="pf_website" value="${e(p.website_url || '')}" placeholder="https://…">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Orden</label>
+          <input type="number" id="pf_sort" value="${p.sort_order ?? 0}" step="1">
+        </div>
+        <div class="form-group">
+          <label>Visible en el sitio</label>
+          <label class="checkbox-label" style="margin-top:.55rem;">
+            <input type="checkbox" id="pf_active" ${p.is_active !== false ? 'checked' : ''}>
+            Activo
+          </label>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">${p.id ? 'Guardar' : 'Crear Partner'}</button>
+      </div>
+    </form>
+  `;
+}
+
+function bindPartnerForm() {
+  const form = document.getElementById('partnerForm');
+  if (!form) return;
+  form.addEventListener('submit', savePartner);
+
+  const fileInput = document.getElementById('pf_file');
+  document.getElementById('pf_upload_btn')?.addEventListener('click', () => fileInput?.click());
+
+  fileInput?.addEventListener('change', async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    if (!(await isSiteBucketReady())) {
+      showToast('Falta bucket «site» — ejecuta sql/setup_completo.sql', 'error');
+      return;
+    }
+    const btn = document.getElementById('pf_upload_btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Subiendo…'; }
+    try {
+      const compressed = await compressImageFile(file);
+      const safeName = compressed.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `partners/${Date.now()}-${safeName}`;
+      const { error } = await sb.storage.from(SITE_BUCKET).upload(path, compressed, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: compressed.type || 'image/png',
+      });
+      if (error) throw error;
+      const { data } = sb.storage.from(SITE_BUCKET).getPublicUrl(path);
+      document.getElementById('pf_logo_url').value = data.publicUrl;
+      document.getElementById('pf_logo_url_input').value = data.publicUrl;
+      const preview = document.getElementById('pf_preview');
+      if (preview) preview.innerHTML = `<img src="${escapeHtml(data.publicUrl)}" alt="">`;
+      showToast('Logo subido', 'success');
+    } catch (err) {
+      showToast(err.message || 'Error al subir', 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Subir imagen'; }
+      fileInput.value = '';
+    }
+  });
+
+  document.getElementById('pf_logo_url_input')?.addEventListener('input', (ev) => {
+    const url = ev.target.value.trim();
+    document.getElementById('pf_logo_url').value = url;
+    const preview = document.getElementById('pf_preview');
+    if (preview) {
+      preview.innerHTML = url
+        ? `<img src="${escapeHtml(url)}" alt="">`
+        : '<span class="text-muted">Sin logo</span>';
+    }
+  });
+}
+
+window.editPartner = async function(id) {
+  const { data, error } = await sb.from('partners').select('*').eq('id', id).single();
+  if (error || !data) {
+    showToast('No se pudo cargar el partner', 'error');
+    return;
+  }
+  openModal('Editar Partner', partnerFormHTML(data));
+  bindPartnerForm();
+};
+
+async function savePartner(e) {
+  e.preventDefault();
+  const id = document.getElementById('pf_id').value;
+  const logo_url = (document.getElementById('pf_logo_url_input').value.trim()
+    || document.getElementById('pf_logo_url').value.trim());
+  if (!logo_url) {
+    showToast('Sube un logo o pega una URL', 'error');
+    return;
+  }
+  const payload = {
+    name: document.getElementById('pf_name').value.trim(),
+    logo_url,
+    website_url: document.getElementById('pf_website').value.trim(),
+    sort_order: parseInt(document.getElementById('pf_sort').value, 10) || 0,
+    is_active: document.getElementById('pf_active').checked,
+  };
+  if (!payload.name) {
+    showToast('El nombre es obligatorio', 'error');
+    return;
+  }
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from('partners').update(payload).eq('id', id));
+  } else {
+    ({ error } = await sb.from('partners').insert(payload));
+  }
+
+  if (error) showToast('Error: ' + error.message, 'error');
+  else {
+    showToast(id ? 'Partner actualizado' : 'Partner creado', 'success');
+    closeModal();
+    loadPartners();
+  }
+}
+
+window.deletePartner = async function(id) {
+  if (!confirm('¿Eliminar este partner?')) return;
+  const { error } = await sb.from('partners').delete().eq('id', id);
+  if (error) showToast('Error: ' + error.message, 'error');
+  else { showToast('Partner eliminado', 'success'); loadPartners(); }
+};
+
+
 /* ── Sales CRUD ──────────────────────── */
 
 async function loadSales() {
@@ -1974,6 +2187,11 @@ function initBindings() {
   });
 
   bindOptional('customerSearch', 'input', debounce(loadCustomers, 300));
+  bindOptional('btnNewPartner', 'click', () => {
+    openModal('Nuevo Partner', partnerFormHTML({ is_active: true, sort_order: 0 }));
+    bindPartnerForm();
+  });
+
   bindOptional('btnNewCustomer', 'click', () => {
     openModal('Nuevo Cliente', customerFormHTML());
     document.getElementById('customerForm')?.addEventListener('submit', saveCustomer);

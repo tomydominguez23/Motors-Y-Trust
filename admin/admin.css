@@ -625,3 +625,40 @@ body.admin-modal-open { overflow: hidden; }
 @media (max-width: 480px) {
   .dashboard-stats { grid-template-columns: 1fr; }
 }
+
+/* Partners admin */
+.partner-admin-thumb {
+  width: 72px;
+  height: 40px;
+  object-fit: contain;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 4px;
+  vertical-align: middle;
+}
+
+.partner-logo-upload {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: .65rem;
+}
+
+.partner-logo-preview {
+  width: 140px;
+  height: 80px;
+  border: 1px dashed var(--border, #e5e7eb);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fb;
+  overflow: hidden;
+  padding: .5rem;
+}
+
+.partner-logo-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
