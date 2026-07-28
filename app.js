@@ -614,6 +614,45 @@ async function applySiteSettings() {
   }
 }
 
+
+async function loadPartners() {
+  const section = document.getElementById('partners');
+  const track = document.getElementById('partnersTrack');
+  if (!section || !track || !supabaseClient) return;
+
+  const { data, error } = await supabaseClient
+    .from('partners')
+    .select('id, name, logo_url, website_url, sort_order')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error || !data?.length) {
+    section.hidden = true;
+    track.innerHTML = '';
+    return;
+  }
+
+  const cards = data
+    .filter((p) => p.logo_url)
+    .map((p) => {
+      const img = `<img src="${p.logo_url}" alt="${p.name || 'Partner'}" loading="lazy">`;
+      const inner = p.website_url
+        ? `<a href="${p.website_url}" target="_blank" rel="noopener noreferrer">${img}</a>`
+        : img;
+      return `<div class="partner-card">${inner}</div>`;
+    });
+
+  if (!cards.length) {
+    section.hidden = true;
+    track.innerHTML = '';
+    return;
+  }
+
+  // Duplicar para loop infinito seamless
+  track.innerHTML = cards.join('') + cards.join('');
+  section.hidden = false;
+}
+
 /* ── Init ────────────────────────────── */
 
 async function init() {
@@ -621,6 +660,9 @@ async function init() {
   await applySiteSettings().catch((err) => {
     console.warn('Trust Motors: site_settings', err);
     applyHeroCarImage('');
+  });
+  await loadPartners().catch((err) => {
+    console.warn('Trust Motors: partners', err);
   });
   await fetchVehicles();
   populateHomeSearchBrands();
