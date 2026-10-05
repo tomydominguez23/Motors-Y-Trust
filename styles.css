@@ -795,6 +795,335 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   justify-content: center;
 }
 
+
+/* ── TRUST CHECK ─────────────────────── */
+
+.trustcheck-section {
+  --tc-ink: #0b1220;
+  --tc-panel: #101a2d;
+  --tc-line: rgba(255, 255, 255, 0.12);
+  --tc-muted: rgba(226, 232, 240, 0.78);
+  --tc-accent: #3d8bfd;
+  --tc-accent-soft: rgba(61, 139, 253, 0.16);
+  --tc-font: 'Outfit', 'Inter', sans-serif;
+  position: relative;
+  padding: 5rem 0 4.5rem;
+  color: #f8fafc;
+  overflow: hidden;
+  background: var(--tc-ink);
+}
+
+.trustcheck-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 12% 18%, rgba(61, 139, 253, 0.22), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 88% 82%, rgba(15, 52, 96, 0.55), transparent 65%),
+    linear-gradient(160deg, #0b1220 0%, #132038 48%, #0d1728 100%);
+  pointer-events: none;
+}
+
+.trustcheck-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 85%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 85%);
+  opacity: 0.45;
+}
+
+.trustcheck-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.trustcheck-intro {
+  max-width: 720px;
+  margin: 0 auto 2.75rem;
+  text-align: center;
+}
+
+.trustcheck-brand {
+  font-family: var(--tc-font);
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  margin-bottom: 0.85rem;
+  animation: trustcheckIn 0.7s ease both;
+}
+
+.trustcheck-brand span {
+  color: var(--tc-accent);
+}
+
+.trustcheck-headline {
+  font-family: var(--tc-font);
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.85rem;
+  animation: trustcheckIn 0.7s ease 0.08s both;
+}
+
+.trustcheck-lead {
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--tc-muted);
+  margin-bottom: 1.5rem;
+  animation: trustcheckIn 0.7s ease 0.14s both;
+}
+
+.trustcheck-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  animation: trustcheckIn 0.7s ease 0.2s both;
+}
+
+.trustcheck-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #25d366;
+  color: #fff;
+  font-weight: 700;
+  padding: 0.9rem 1.35rem;
+  border-radius: 10px;
+  min-height: 48px;
+  transition: var(--transition);
+}
+
+.trustcheck-btn-primary:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.trustcheck-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.9rem 1.2rem;
+  border-radius: 10px;
+  min-height: 48px;
+  border: 1px solid var(--tc-line);
+  color: #fff;
+  font-weight: 600;
+  background: rgba(255,255,255,0.04);
+  transition: var(--transition);
+}
+
+.trustcheck-btn-ghost:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.trustcheck-btn-block {
+  width: 100%;
+  margin-top: 1.25rem;
+}
+
+.trustcheck-panel {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.trustcheck-includes,
+.trustcheck-pricing {
+  background: rgba(16, 26, 45, 0.72);
+  border: 1px solid var(--tc-line);
+  border-radius: 18px;
+  padding: 1.5rem 1.4rem;
+  backdrop-filter: blur(8px);
+}
+
+.trustcheck-includes h3,
+.trustcheck-pricing h4 {
+  font-family: var(--tc-font);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.trustcheck-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 1rem;
+}
+
+.trustcheck-list li {
+  position: relative;
+  padding-left: 1.45rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--tc-muted);
+}
+
+.trustcheck-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: var(--tc-accent-soft);
+  box-shadow: inset 0 0 0 2px var(--tc-accent);
+}
+
+.trustcheck-price-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tc-muted);
+}
+
+.trustcheck-price {
+  font-family: var(--tc-font);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0.2rem 0 0.35rem;
+}
+
+.trustcheck-price-note {
+  font-size: 0.9rem;
+  color: var(--tc-muted);
+  margin-bottom: 1rem;
+}
+
+.trustcheck-payments {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1.15rem;
+}
+
+.trustcheck-payment {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--tc-line);
+}
+
+.trustcheck-payment-step {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  background: var(--tc-accent);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.trustcheck-payment strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.trustcheck-payment span {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--tc-muted);
+  margin-top: 0.1rem;
+}
+
+.trustcheck-absorb {
+  border-top: 1px solid var(--tc-line);
+  padding-top: 1rem;
+}
+
+.trustcheck-absorb p {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--tc-muted);
+  margin-bottom: 0.75rem;
+}
+
+.trustcheck-absorb strong {
+  color: #fff;
+}
+
+.trustcheck-tagline {
+  font-family: var(--tc-font);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  margin-top: 0.25rem;
+}
+
+.service-card--trustcheck {
+  text-decoration: none;
+  border-color: rgba(15, 52, 96, 0.35);
+  background: linear-gradient(180deg, #f3f7fc 0%, #fff 100%);
+}
+
+.service-card--trustcheck .service-icon {
+  background: #e8f0fa;
+  color: var(--color-accent);
+}
+
+.service-card-link {
+  display: inline-block;
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+@keyframes trustcheckIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+  .trustcheck-panel {
+    grid-template-columns: 1fr;
+  }
+  .trustcheck-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .trustcheck-section {
+    padding: 3.5rem 0 3rem;
+  }
+  .trustcheck-includes,
+  .trustcheck-pricing {
+    padding: 1.25rem 1.1rem;
+  }
+  .trustcheck-cta {
+    flex-direction: column;
+  }
+  .trustcheck-cta .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trustcheck-brand,
+  .trustcheck-headline,
+  .trustcheck-lead,
+  .trustcheck-cta {
+    animation: none;
+  }
+}
+
 /* ── Services ────────────────────────── */
 
 .services-section {
