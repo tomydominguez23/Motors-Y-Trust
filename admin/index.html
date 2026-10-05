@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=4">
+  <link rel="stylesheet" href="admin.css?v=6">
   <style>
     .pages-viewport { flex: 1; width: 100%; min-height: 50vh; }
     .pages-viewport > .page:not(.active) {
@@ -66,6 +66,7 @@
   <div class="admin-layout" id="adminLayout">
 
     <!-- Sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay" hidden aria-hidden="true"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <a href="index.html" class="logo">
@@ -73,6 +74,9 @@
           <span class="logo-motors">MOTORS</span>
         </a>
         <span class="sidebar-badge">Admin</span>
+        <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Cerrar menú">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <nav class="sidebar-nav">
@@ -450,9 +454,38 @@
         expenses: { id: 'pageExpenses', title: 'Gastos' }
       };
 
+      function closeMobileSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar && sidebar.classList.remove('open');
+        if (overlay) {
+          overlay.hidden = true;
+          overlay.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('sidebar-open');
+      }
+
+      function openMobileSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar && sidebar.classList.add('open');
+        if (overlay) {
+          overlay.hidden = false;
+          overlay.setAttribute('aria-hidden', 'false');
+        }
+        document.body.classList.add('sidebar-open');
+      }
+
+      function toggleMobileSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebar.classList.contains('open')) closeMobileSidebar();
+        else openMobileSidebar();
+      }
+
       function switchPage(key) {
         var info = PAGE_MAP[key];
         if (!info) return;
+        closeMobileSidebar();
         document.querySelectorAll('.sidebar-link[data-page]').forEach(function (b) {
           b.classList.toggle('active', b.getAttribute('data-page') === key);
         });
@@ -529,6 +562,20 @@
 
       function initShell() {
         testSupabaseLink();
+        document.getElementById('sidebarToggle')?.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleMobileSidebar();
+        });
+        document.getElementById('sidebarClose')?.addEventListener('click', function (e) {
+          e.preventDefault();
+          closeMobileSidebar();
+        });
+        document.getElementById('sidebarOverlay')?.addEventListener('click', closeMobileSidebar);
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') closeMobileSidebar();
+        });
+
         document.querySelector('.sidebar-nav')?.addEventListener('click', function (e) {
           var btn = e.target.closest('.sidebar-link[data-page]');
           if (!btn) return;
@@ -561,6 +608,6 @@
       window.adminSwitchPage = switchPage;
     })();
   </script>
-  <script src="admin.js?v=16"></script>
+  <script src="admin.js?v=18"></script>
 </body>
 </html>

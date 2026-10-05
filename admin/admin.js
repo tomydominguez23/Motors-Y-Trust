@@ -343,6 +343,9 @@ function navigateTo(page) {
   const titleEl = document.getElementById('pageTitle');
   if (titleEl) titleEl.textContent = pageMap[page].title;
   document.getElementById('sidebar')?.classList.remove('open');
+  const __ov = document.getElementById('sidebarOverlay');
+  if (__ov) { __ov.hidden = true; __ov.setAttribute('aria-hidden', 'true'); }
+  document.body.classList.remove('sidebar-open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (location.hash !== '#' + page) location.hash = page;
 
@@ -2171,9 +2174,7 @@ function initBindings() {
 
   /* Navegación: manejada por index.html (adminSwitchPage) para evitar duplicados */
 
-  bindOptional('sidebarToggle', 'click', () => {
-    document.getElementById('sidebar')?.classList.toggle('open');
-  });
+  /* Sidebar open/close en móvil: manejado en panel.html (overlay + botón X) */
 
   bindOptional('vehicleSearch', 'input', debounce(loadVehicles, 300));
   bindOptional('vehicleStatusFilter', 'change', loadVehicles);
