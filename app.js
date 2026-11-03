@@ -691,6 +691,7 @@ function renderTrustCheckStories(rows) {
   }
 
   const esc = mediaLib.escapeHtml;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   list.innerHTML = stories.map((story) => {
     const quote = story.quote
       ? `<p class="trustcheck-story-quote">«${esc(story.quote)}»</p>`
@@ -702,22 +703,40 @@ function renderTrustCheckStories(rows) {
         </button>`;
       }
       if (item.type === 'video') {
+        const playback = reduceMotion
+          ? 'muted playsinline preload="metadata"'
+          : 'muted autoplay loop playsinline preload="auto"';
+        const playIcon = reduceMotion ? '<span class="trustcheck-media-play" aria-hidden="true"></span>' : '';
         return `<div class="trustcheck-media trustcheck-media--video">
-          <video src="${esc(item.url)}" muted playsinline preload="metadata" tabindex="-1"></video>
-          <button type="button" class="trustcheck-media-open" data-kind="video" data-src="${esc(item.url)}" aria-label="Reproducir video de ${esc(story.name)}">
-            <span class="trustcheck-media-play" aria-hidden="true"></span>
+          <video src="${esc(item.url)}" ${playback} tabindex="-1"></video>
+          <button type="button" class="trustcheck-media-open" data-kind="video" data-src="${esc(item.url)}" aria-label="Ver video de ${esc(story.name)} en grande">
+            ${playIcon}
           </button>
         </div>`;
       }
       if (item.type === 'youtube') {
-        return `<button type="button" class="trustcheck-media trustcheck-media--video" data-kind="youtube" data-id="${esc(item.id)}" aria-label="Reproducir video de ${esc(story.name)}">
-          <img src="https://i.ytimg.com/vi/${esc(item.id)}/hqdefault.jpg" alt="" loading="lazy">
+        if (reduceMotion) {
+          return `<button type="button" class="trustcheck-media trustcheck-media--video" data-kind="youtube" data-id="${esc(item.id)}" aria-label="Reproducir video de ${esc(story.name)}">
+            <img src="https://i.ytimg.com/vi/${esc(item.id)}/hqdefault.jpg" alt="" loading="lazy">
+            <span class="trustcheck-media-play" aria-hidden="true"></span>
+          </button>`;
+        }
+        const ytSrc = `https://www.youtube-nocookie.com/embed/${esc(item.id)}?autoplay=1&mute=1&loop=1&playlist=${esc(item.id)}&controls=0&modestbranding=1&playsinline=1&rel=0`;
+        return `<div class="trustcheck-media trustcheck-media--video">
+          <iframe src="${ytSrc}" title="Video de ${esc(story.name)}" allow="autoplay; encrypted-media; picture-in-picture" loading="lazy" tabindex="-1"></iframe>
+          <button type="button" class="trustcheck-media-open" data-kind="youtube" data-id="${esc(item.id)}" aria-label="Ver video de ${esc(story.name)} en grande"></button>
+        </div>`;
+      }
+      if (reduceMotion) {
+        return `<button type="button" class="trustcheck-media trustcheck-media--video" data-kind="vimeo" data-id="${esc(item.id)}" aria-label="Reproducir video de ${esc(story.name)}">
           <span class="trustcheck-media-play" aria-hidden="true"></span>
         </button>`;
       }
-      return `<button type="button" class="trustcheck-media trustcheck-media--video" data-kind="vimeo" data-id="${esc(item.id)}" aria-label="Reproducir video de ${esc(story.name)}">
-        <span class="trustcheck-media-play" aria-hidden="true"></span>
-      </button>`;
+      const vimeoSrc = `https://player.vimeo.com/video/${esc(item.id)}?autoplay=1&muted=1&loop=1&background=1&autopause=0`;
+      return `<div class="trustcheck-media trustcheck-media--video">
+        <iframe src="${vimeoSrc}" title="Video de ${esc(story.name)}" allow="autoplay; fullscreen; picture-in-picture" loading="lazy" tabindex="-1"></iframe>
+        <button type="button" class="trustcheck-media-open" data-kind="vimeo" data-id="${esc(item.id)}" aria-label="Ver video de ${esc(story.name)} en grande"></button>
+      </div>`;
     }).join('');
 
     return `<article class="trustcheck-story">
@@ -734,6 +753,40 @@ function renderTrustCheckStories(rows) {
   }).join('');
 
   section.hidden = false;
+  startTrustCheckVideos();
+}
+
+let trustVideoObserver = null;
+let trustLightboxOpen = false;
+
+function startTrustCheckVideos() {
+  if (trustVideoObserver) {
+    trustVideoObserver.disconnect();
+    trustVideoObserver = null;
+  }
+  const videos = document.querySelectorAll('#trustcheckStoriesList video');
+  if (!videos.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const play = (video) => {
+    if (trustLightboxOpen) return;
+    video.muted = true;
+    video.defaultMuted = true;
+    const attempt = video.play();
+    if (attempt && typeof attempt.catch === 'function') attempt.catch(() => {});
+  };
+
+  if (!('IntersectionObserver' in window)) {
+    videos.forEach(play);
+    return;
+  }
+
+  trustVideoObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) play(entry.target);
+      else entry.target.pause();
+    });
+  }, { threshold: 0.35 });
+  videos.forEach((video) => trustVideoObserver.observe(video));
 }
 
 function onTrustCheckMediaClick(event) {
@@ -758,14 +811,27 @@ function openTrustLightbox(kind, value) {
   } else if (kind === 'video') {
     const src = mediaLib.safeHttpUrl(value);
     if (!src) return;
-    html = `<video src="${esc(src)}" controls autoplay playsinline></video>`;
+    html = `<video src="${esc(src)}" controls autoplay muted playsinline></video>`;
   } else if (kind === 'youtube' && /^[A-Za-z0-9_-]{11}$/.test(value)) {
     html = `<iframe src="https://www.youtube-nocookie.com/embed/${esc(value)}?autoplay=1" title="Video de un cliente" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
   } else if (kind === 'vimeo' && /^\d{6,12}$/.test(value)) {
     html = `<iframe src="https://player.vimeo.com/video/${esc(value)}?autoplay=1" title="Video de un cliente" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
   }
   if (!html) return;
+  trustLightboxOpen = true;
+  document.querySelectorAll('#trustcheckStoriesList video').forEach((video) => video.pause());
   stage.innerHTML = html;
+  const preview = stage.querySelector('video');
+  if (preview) {
+    preview.muted = false;
+    const attempt = preview.play();
+    if (attempt && typeof attempt.catch === 'function') {
+      attempt.catch(() => {
+        preview.muted = true;
+        preview.play().catch(() => {});
+      });
+    }
+  }
   box.hidden = false;
   document.body.style.overflow = 'hidden';
 }
@@ -774,9 +840,11 @@ function closeTrustLightbox() {
   const box = document.getElementById('trustcheckLightbox');
   const stage = document.getElementById('trustcheckLightboxStage');
   if (!box) return;
+  trustLightboxOpen = false;
   box.hidden = true;
   if (stage) stage.innerHTML = '';
   document.body.style.overflow = '';
+  startTrustCheckVideos();
 }
 
 async function loadTrustCheckStories() {
