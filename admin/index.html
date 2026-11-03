@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=7">
+  <link rel="stylesheet" href="admin.css?v=8">
   <style>
     .pages-viewport { flex: 1; width: 100%; min-height: 50vh; }
     .pages-viewport > .page:not(.active) {
@@ -280,6 +280,13 @@
 
       <!-- Page: TRUST CHECK stories -->
       <section class="page" id="pageTrustCheck">
+        <div class="trust-step-block">
+          <h3>Imágenes de los pasos 1 y 2</h3>
+          <p class="text-muted">Reemplazan el recuadro azul con el número, junto al precio de TRUST CHECK. Si quitas la imagen, vuelve a verse el 1 o el 2.</p>
+          <div class="site-media-grid" id="trustStepImages">
+            <p class="text-muted">Cargando…</p>
+          </div>
+        </div>
         <div class="page-actions">
           <p class="text-muted" style="margin:0;flex:1;max-width:640px;">Fotos y videos de gente que ya contrató TRUST CHECK y quedó feliz. En el sitio se muestran debajo de cada persona, en la sección TRUST CHECK.</p>
           <button class="btn btn-primary" id="btnNewTrustStory" type="button">
@@ -639,6 +646,6 @@
     })();
   </script>
   <script src="../trustcheck-media.js?v=1"></script>
-  <script src="admin.js?v=19"></script>
+  <script src="admin.js?v=20"></script>
 </body>
 </html>
