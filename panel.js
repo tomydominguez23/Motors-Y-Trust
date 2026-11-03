@@ -319,7 +319,7 @@ const pageMap = {
   dashboard: { el: 'pageDashboard', title: 'Dashboard', load: loadDashboard },
   vehicles: { el: 'pageVehicles', title: 'Vehículos', load: loadVehicles },
   siteMedia: { el: 'pageSiteMedia', title: 'Imágenes del sitio', load: loadSiteMedia },
-  trustcheck: { el: 'pageTrustCheck', title: 'TRUST CHECK · Clientes felices', load: loadTrustStories },
+  trustcheck: { el: 'pageTrustCheck', title: 'TRUST CHECK · Clientes felices', load: loadTrustCheckPage },
   partners: { el: 'pagePartners', title: 'Partners', load: loadPartners },
   sales: { el: 'pageSales', title: 'Ventas', load: loadSales },
   customers: { el: 'pageCustomers', title: 'Clientes', load: loadCustomers },
@@ -1588,6 +1588,59 @@ window.deletePartner = async function(id) {
   else { showToast('Partner eliminado', 'success'); loadPartners(); }
 };
 
+
+/* ── TRUST CHECK: clientes felices ───── */
+
+const TRUST_STEP_DEFS = [
+  { key: 'trustcheck_step_1', label: 'Paso 1', hint: 'Se ve en el recuadro azul del «1», al iniciar la búsqueda. JPG, PNG o WebP.' },
+  { key: 'trustcheck_step_2', label: 'Paso 2', hint: 'Se ve en el recuadro azul del «2», al concretar la compra. JPG, PNG o WebP.' },
+];
+
+async function loadTrustCheckPage() {
+  await loadTrustStepImages();
+  await loadTrustStories();
+}
+
+async function loadTrustStepImages() {
+  const grid = document.getElementById('trustStepImages');
+  if (!grid) return;
+  grid.innerHTML = '<p class="text-muted">Cargando imágenes de los pasos…</p>';
+
+  const { data, error } = await sb.from('site_settings').select('key, value');
+  if (error) {
+    grid.innerHTML = `<div class="site-media-error">No se pudo leer las imágenes: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
+
+  const map = {};
+  (data || []).forEach((row) => { map[row.key] = row.value || ''; });
+  const bucketOk = await isSiteBucketReady();
+
+  grid.innerHTML = TRUST_STEP_DEFS.map((def) => {
+    const url = map[def.key] || '';
+    const preview = url
+      ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(def.label)}">`
+      : `<div class="site-media-placeholder">Sin imagen · se muestra el ${def.key.endsWith('1') ? '1' : '2'}</div>`;
+    return `
+      <article class="site-media-card" data-asset-key="${escapeHtml(def.key)}">
+        <div class="site-media-preview">${preview}</div>
+        <div class="site-media-body">
+          <h3>${escapeHtml(def.label)}</h3>
+          <p class="text-muted">${escapeHtml(def.hint)}</p>
+          <input type="hidden" class="site-asset-url" value="${escapeHtml(url)}">
+          <div class="site-media-actions">
+            <input type="file" class="site-asset-file" accept="image/*" hidden>
+            <button type="button" class="btn btn-outline btn-sm btn-site-upload" ${bucketOk ? '' : 'disabled title="Falta el bucket site"'}>Subir</button>
+            <input type="url" class="site-asset-url-input" placeholder="https://…" value="${escapeHtml(url)}">
+            <button type="button" class="btn btn-primary btn-sm btn-site-save">Guardar</button>
+            <button type="button" class="btn btn-outline btn-sm btn-site-clear" title="Volver al número">Quitar</button>
+          </div>
+        </div>
+      </article>`;
+  }).join('');
+
+  grid.querySelectorAll('.site-media-card').forEach((card) => bindSiteMediaCard(card));
+}
 
 /* ── TRUST CHECK: clientes felices ───── */
 

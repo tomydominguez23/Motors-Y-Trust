@@ -623,6 +623,31 @@ async function applySiteSettings() {
       aboutVisual.innerHTML = `<img src="${settings.about_image}" alt="Sobre Trust Motors" class="about-banner-img">`;
     }
   }
+
+  applyTrustCheckStepImage('trustcheckStep1', settings.trustcheck_step_1 || '');
+  applyTrustCheckStepImage('trustcheckStep2', settings.trustcheck_step_2 || '');
+}
+
+function applyTrustCheckStepImage(id, url) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const step = el.dataset.step || '';
+  const media = window.TrustCheckMedia;
+  const safe = media ? media.safeHttpUrl(url) : '';
+  if (!safe) {
+    el.classList.remove('trustcheck-payment-step--image');
+    el.textContent = step;
+    return;
+  }
+  const img = document.createElement('img');
+  img.src = safe;
+  img.alt = step ? `Paso ${step}` : '';
+  img.addEventListener('error', () => {
+    el.classList.remove('trustcheck-payment-step--image');
+    el.textContent = step;
+  });
+  el.classList.add('trustcheck-payment-step--image');
+  el.replaceChildren(img);
 }
 
 

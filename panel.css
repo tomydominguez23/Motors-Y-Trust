@@ -712,6 +712,20 @@ body.admin-modal-open { overflow: hidden; }
   object-fit: contain;
 }
 
+.trust-step-block {
+  margin-bottom: 1.5rem;
+}
+
+.trust-step-block h3 {
+  font-size: 1rem;
+  margin-bottom: .35rem;
+}
+
+.trust-step-block > .text-muted {
+  margin-bottom: .85rem;
+  max-width: 640px;
+}
+
 /* TRUST CHECK — clientes felices */
 .trust-story-admin-thumbs {
   display: flex;

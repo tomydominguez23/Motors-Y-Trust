@@ -1030,6 +1030,26 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   flex-shrink: 0;
 }
 
+.trustcheck-payment:has(.trustcheck-payment-step--image) {
+  align-items: center;
+}
+
+.trustcheck-payment .trustcheck-payment-step--image {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  color: transparent;
+}
+
+.trustcheck-payment .trustcheck-payment-step--image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .trustcheck-payment strong {
   display: block;
   font-size: 1rem;
