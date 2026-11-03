@@ -711,3 +711,74 @@ body.admin-modal-open { overflow: hidden; }
   max-height: 100%;
   object-fit: contain;
 }
+
+/* TRUST CHECK — clientes felices */
+.trust-story-admin-thumbs {
+  display: flex;
+  gap: .3rem;
+  align-items: center;
+}
+
+.trust-story-admin-thumbs img,
+.trust-story-mini-badge {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #111827;
+}
+
+.trust-story-mini-badge,
+.trust-story-media-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.trust-story-media-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-top: .75rem;
+}
+
+.trust-story-media-item {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .45rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.trust-story-media-item img,
+.trust-story-media-item video,
+.trust-story-media-badge {
+  width: 84px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #111827;
+  flex-shrink: 0;
+}
+
+.trust-story-media-meta {
+  flex: 1;
+  min-width: 0;
+  font-size: .8rem;
+}
+
+.trust-story-media-meta strong { display: block; }
+
+.trust-story-media-meta span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-light);
+}

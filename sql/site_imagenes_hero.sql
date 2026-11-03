@@ -52,12 +52,15 @@ VALUES (
   'site',
   'site',
   true,
-  10485760,
-  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']::text[]
+  52428800,
+  ARRAY[
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+    'video/mp4', 'video/webm', 'video/quicktime', 'video/ogg'
+  ]::text[]
 )
 ON CONFLICT (id) DO UPDATE SET
   public = EXCLUDED.public,
-  file_size_limit = EXCLUDED.file_size_limit,
+  file_size_limit = GREATEST(COALESCE(storage.buckets.file_size_limit, 0), EXCLUDED.file_size_limit),
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 DROP POLICY IF EXISTS "Temporal: lectura pública site" ON storage.objects;

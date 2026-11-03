@@ -53,3 +53,12 @@ El login usa **Supabase Authentication**, no la tabla `customers`:
 3. Si el login falla con «email not confirmed», desactiva **Confirm email** en **Authentication → Providers → Email**
 
 Si creaste el usuario solo en **Table Editor** o en la tabla `customers`, no podrás iniciar sesión hasta crearlo en **Authentication**.
+
+### Clientes felices de TRUST CHECK
+
+En el inicio, la sección TRUST CHECK puede mostrar fotos y videos debajo de cada persona que ya contrató y quedó feliz.
+
+1. Ejecuta **`sql/trustcheck_stories.sql`** en Supabase → SQL Editor.
+2. Entra al panel → **TRUST CHECK**.
+3. Crea un cliente, sube fotos o un video MP4 (hasta 50 MB) o pega un enlace de YouTube o Vimeo.
+4. Recarga el sitio: aparece debajo del precio del servicio. Si no hay nadie activo, el bloque se oculta.

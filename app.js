@@ -391,8 +391,19 @@ function bindUiHandlers() {
   document.getElementById('vehicleModal')?.addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeModal();
   });
+  document.getElementById('trustcheckStoriesList')?.addEventListener('click', onTrustCheckMediaClick);
+  document.getElementById('trustcheckLightboxClose')?.addEventListener('click', closeTrustLightbox);
+  document.getElementById('trustcheckLightbox')?.addEventListener('click', (e) => {
+    if (e.target.id === 'trustcheckLightbox') closeTrustLightbox();
+  });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key !== 'Escape') return;
+    const lightbox = document.getElementById('trustcheckLightbox');
+    if (lightbox && !lightbox.hidden) {
+      closeTrustLightbox();
+      return;
+    }
+    closeModal();
   });
 
   window.addEventListener('scroll', () => {
@@ -653,6 +664,141 @@ async function loadPartners() {
   section.hidden = false;
 }
 
+/* ── TRUST CHECK: clientes felices ───── */
+
+function personInitials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return parts.slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('es');
+}
+
+function renderTrustCheckStories(rows) {
+  const section = document.getElementById('trustcheckStories');
+  const list = document.getElementById('trustcheckStoriesList');
+  const mediaLib = window.TrustCheckMedia;
+  if (!section || !list || !mediaLib) return;
+
+  const stories = (rows || []).map((row) => ({
+    name: String(row.customer_name || '').trim(),
+    quote: String(row.quote || '').trim(),
+    media: mediaLib.normalizeStoryMedia(row.media),
+  })).filter((story) => story.name && story.media.length);
+
+  if (!stories.length) {
+    section.hidden = true;
+    list.innerHTML = '';
+    return;
+  }
+
+  const esc = mediaLib.escapeHtml;
+  list.innerHTML = stories.map((story) => {
+    const quote = story.quote
+      ? `<p class="trustcheck-story-quote">«${esc(story.quote)}»</p>`
+      : '';
+    const media = story.media.map((item) => {
+      if (item.type === 'image') {
+        return `<button type="button" class="trustcheck-media trustcheck-media--image" data-kind="image" data-src="${esc(item.url)}" aria-label="Ver foto de ${esc(story.name)}">
+          <img src="${esc(item.url)}" alt="Foto de ${esc(story.name)}" loading="lazy">
+        </button>`;
+      }
+      if (item.type === 'video') {
+        return `<div class="trustcheck-media trustcheck-media--video">
+          <video src="${esc(item.url)}" muted playsinline preload="metadata" tabindex="-1"></video>
+          <button type="button" class="trustcheck-media-open" data-kind="video" data-src="${esc(item.url)}" aria-label="Reproducir video de ${esc(story.name)}">
+            <span class="trustcheck-media-play" aria-hidden="true"></span>
+          </button>
+        </div>`;
+      }
+      if (item.type === 'youtube') {
+        return `<button type="button" class="trustcheck-media trustcheck-media--video" data-kind="youtube" data-id="${esc(item.id)}" aria-label="Reproducir video de ${esc(story.name)}">
+          <img src="https://i.ytimg.com/vi/${esc(item.id)}/hqdefault.jpg" alt="" loading="lazy">
+          <span class="trustcheck-media-play" aria-hidden="true"></span>
+        </button>`;
+      }
+      return `<button type="button" class="trustcheck-media trustcheck-media--video" data-kind="vimeo" data-id="${esc(item.id)}" aria-label="Reproducir video de ${esc(story.name)}">
+        <span class="trustcheck-media-play" aria-hidden="true"></span>
+      </button>`;
+    }).join('');
+
+    return `<article class="trustcheck-story">
+      <div class="trustcheck-story-person">
+        <span class="trustcheck-story-avatar" aria-hidden="true">${esc(personInitials(story.name))}</span>
+        <div>
+          <strong>${esc(story.name)}</strong>
+          <span class="trustcheck-story-badge">Ya contrató y quedó feliz</span>
+          ${quote}
+        </div>
+      </div>
+      <div class="trustcheck-story-media">${media}</div>
+    </article>`;
+  }).join('');
+
+  section.hidden = false;
+}
+
+function onTrustCheckMediaClick(event) {
+  const trigger = event.target.closest('[data-kind]');
+  if (!trigger) return;
+  const kind = trigger.dataset.kind;
+  if (kind === 'image' || kind === 'video') openTrustLightbox(kind, trigger.dataset.src || '');
+  else if (kind === 'youtube' || kind === 'vimeo') openTrustLightbox(kind, trigger.dataset.id || '');
+}
+
+function openTrustLightbox(kind, value) {
+  const box = document.getElementById('trustcheckLightbox');
+  const stage = document.getElementById('trustcheckLightboxStage');
+  const mediaLib = window.TrustCheckMedia;
+  if (!box || !stage || !mediaLib || !value) return;
+  const esc = mediaLib.escapeHtml;
+  let html = '';
+  if (kind === 'image') {
+    const src = mediaLib.safeHttpUrl(value);
+    if (!src) return;
+    html = `<img src="${esc(src)}" alt="">`;
+  } else if (kind === 'video') {
+    const src = mediaLib.safeHttpUrl(value);
+    if (!src) return;
+    html = `<video src="${esc(src)}" controls autoplay playsinline></video>`;
+  } else if (kind === 'youtube' && /^[A-Za-z0-9_-]{11}$/.test(value)) {
+    html = `<iframe src="https://www.youtube-nocookie.com/embed/${esc(value)}?autoplay=1" title="Video de un cliente" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  } else if (kind === 'vimeo' && /^\d{6,12}$/.test(value)) {
+    html = `<iframe src="https://player.vimeo.com/video/${esc(value)}?autoplay=1" title="Video de un cliente" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+  }
+  if (!html) return;
+  stage.innerHTML = html;
+  box.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTrustLightbox() {
+  const box = document.getElementById('trustcheckLightbox');
+  const stage = document.getElementById('trustcheckLightboxStage');
+  if (!box) return;
+  box.hidden = true;
+  if (stage) stage.innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+async function loadTrustCheckStories() {
+  const section = document.getElementById('trustcheckStories');
+  if (!section || !supabaseClient || !window.TrustCheckMedia) return;
+
+  const { data, error } = await supabaseClient
+    .from('trustcheck_stories')
+    .select('id, customer_name, quote, media, sort_order')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    section.hidden = true;
+    console.warn('Trust Motors: trustcheck_stories', error.message);
+    return;
+  }
+
+  renderTrustCheckStories(data || []);
+}
+
 /* ── Init ────────────────────────────── */
 
 async function init() {
@@ -663,6 +809,10 @@ async function init() {
   });
   await loadPartners().catch((err) => {
     console.warn('Trust Motors: partners', err);
+  });
+  await loadTrustCheckStories().catch((err) => {
+    console.warn('Trust Motors: trustcheck_stories', err);
+    document.getElementById('trustcheckStories')?.setAttribute('hidden', '');
   });
   await fetchVehicles();
   populateHomeSearchBrands();
