@@ -1115,12 +1115,250 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   }
 }
 
+.trustcheck-stories {
+  margin-top: 2.75rem;
+  padding-top: 2.25rem;
+  border-top: 1px solid var(--tc-line);
+}
+
+.trustcheck-stories-head {
+  max-width: 640px;
+  margin: 0 auto 1.6rem;
+  text-align: center;
+}
+
+.trustcheck-stories-kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tc-accent);
+  margin-bottom: 0.45rem;
+}
+
+.trustcheck-stories-head h3 {
+  font-family: var(--tc-font);
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.45rem;
+}
+
+.trustcheck-stories-head p {
+  color: var(--tc-muted);
+  line-height: 1.6;
+}
+
+.trustcheck-stories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.trustcheck-story {
+  background: rgba(16, 26, 45, 0.72);
+  border: 1px solid var(--tc-line);
+  border-radius: 18px;
+  padding: 1.15rem 1.15rem 1.2rem;
+}
+
+.trustcheck-story-person {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 0.95rem;
+}
+
+.trustcheck-story-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--tc-accent);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.trustcheck-story-person strong {
+  display: block;
+  font-size: 1.02rem;
+}
+
+.trustcheck-story-badge {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #b9d4ff;
+}
+
+.trustcheck-story-quote {
+  margin-top: 0.35rem;
+  color: var(--tc-muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.trustcheck-story-media {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 0.65rem;
+}
+
+.trustcheck-story-media:has(.trustcheck-media:only-child) {
+  grid-template-columns: minmax(0, 720px);
+  justify-content: center;
+}
+
+.trustcheck-media {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  color: inherit;
+}
+
+.trustcheck-story-media:has(.trustcheck-media:only-child) .trustcheck-media {
+  aspect-ratio: 16 / 9;
+}
+
+.trustcheck-media img,
+.trustcheck-media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.trustcheck-media-open {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.trustcheck-media-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(11, 18, 32, 0.72);
+  border: 2px solid #fff;
+  pointer-events: none;
+}
+
+.trustcheck-media-play::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 54%;
+  transform: translate(-50%, -50%);
+  border-style: solid;
+  border-width: 8px 0 8px 13px;
+  border-color: transparent transparent transparent #fff;
+}
+
+.trustcheck-media:hover img,
+.trustcheck-media:hover video {
+  transform: scale(1.03);
+  transition: transform 0.35s ease;
+}
+
+.trustcheck-media:focus-visible,
+.trustcheck-media-open:focus-visible {
+  outline: 2px solid var(--tc-accent);
+  outline-offset: 2px;
+}
+
+.trustcheck-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: rgba(5, 8, 16, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 1rem 1.25rem;
+}
+
+.trustcheck-lightbox[hidden] {
+  display: none !important;
+}
+
+.trustcheck-lightbox-stage {
+  width: min(960px, 100%);
+}
+
+.trustcheck-lightbox-stage img,
+.trustcheck-lightbox-stage video {
+  width: 100%;
+  max-height: calc(100vh - 5.5rem);
+  object-fit: contain;
+  border-radius: 12px;
+  background: #000;
+}
+
+.trustcheck-lightbox-stage iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 12px;
+  background: #000;
+}
+
+.trustcheck-lightbox-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .trustcheck-story-media {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .trustcheck-story-media:has(.trustcheck-media:only-child) {
+    grid-template-columns: 1fr;
+  }
+  .trustcheck-story-media .trustcheck-media:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .trustcheck-brand,
   .trustcheck-headline,
   .trustcheck-lead,
   .trustcheck-cta {
     animation: none;
+  }
+  .trustcheck-media:hover img,
+  .trustcheck-media:hover video {
+    transform: none;
   }
 }
 

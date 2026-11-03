@@ -15,6 +15,23 @@ DROP POLICY IF EXISTS "Temporal: anon gastos" ON public.expenses;
 DROP POLICY IF EXISTS "Temporal: anon consultas" ON public.inquiries;
 DROP POLICY IF EXISTS "Temporal: anon site_settings" ON public.site_settings;
 
+DO $trustcheck$
+BEGIN
+  IF to_regclass('public.trustcheck_stories') IS NULL THEN
+    RETURN;
+  END IF;
+
+  EXECUTE 'DROP POLICY IF EXISTS "Temporal: anon trustcheck_stories" ON public.trustcheck_stories';
+  EXECUTE 'DROP POLICY IF EXISTS "Clientes felices visibles en el sitio" ON public.trustcheck_stories';
+  EXECUTE 'CREATE POLICY "Clientes felices visibles en el sitio" ON public.trustcheck_stories FOR SELECT TO anon, authenticated USING (is_active = true)';
+  EXECUTE 'DROP POLICY IF EXISTS "Admin acceso total trustcheck_stories" ON public.trustcheck_stories';
+  EXECUTE 'CREATE POLICY "Admin acceso total trustcheck_stories" ON public.trustcheck_stories FOR ALL TO authenticated USING (auth.uid() IS NOT NULL) WITH CHECK (auth.uid() IS NOT NULL)';
+  EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON public.trustcheck_stories FROM anon';
+  EXECUTE 'GRANT SELECT ON public.trustcheck_stories TO anon';
+  EXECUTE 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.trustcheck_stories TO authenticated';
+END
+$trustcheck$;
+
 -- ── Vehículos: público solo lectura de disponibles ──────────
 DROP POLICY IF EXISTS "Vehículos disponibles son públicos" ON public.vehicles;
 DROP POLICY IF EXISTS "Vehículos visibles en el sitio" ON public.vehicles;

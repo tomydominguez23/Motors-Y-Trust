@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=12">
+  <link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
 
@@ -261,6 +261,15 @@
           </a>
         </div>
       </div>
+
+      <div class="trustcheck-stories" id="trustcheckStories" hidden>
+        <div class="trustcheck-stories-head">
+          <p class="trustcheck-stories-kicker">Clientes reales</p>
+          <h3>Gente que ya contrató y quedó feliz</h3>
+          <p>Fotos y videos de quienes compraron su auto con TRUST CHECK.</p>
+        </div>
+        <div class="trustcheck-stories-list" id="trustcheckStoriesList"></div>
+      </div>
     </div>
   </section>
 
@@ -498,9 +507,15 @@
     </div>
   </div>
 
+  <div class="trustcheck-lightbox" id="trustcheckLightbox" hidden>
+    <button type="button" class="trustcheck-lightbox-close" id="trustcheckLightboxClose" aria-label="Cerrar">&times;</button>
+    <div class="trustcheck-lightbox-stage" id="trustcheckLightboxStage"></div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="finance-utils.js?v=1"></script>
   <script src="vehicle-badges.js?v=4"></script>
-  <script src="app.js?v=13"></script>
+  <script src="trustcheck-media.js?v=1"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

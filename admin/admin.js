@@ -319,6 +319,7 @@ const pageMap = {
   dashboard: { el: 'pageDashboard', title: 'Dashboard', load: loadDashboard },
   vehicles: { el: 'pageVehicles', title: 'Vehículos', load: loadVehicles },
   siteMedia: { el: 'pageSiteMedia', title: 'Imágenes del sitio', load: loadSiteMedia },
+  trustcheck: { el: 'pageTrustCheck', title: 'TRUST CHECK · Clientes felices', load: loadTrustStories },
   partners: { el: 'pagePartners', title: 'Partners', load: loadPartners },
   sales: { el: 'pageSales', title: 'Ventas', load: loadSales },
   customers: { el: 'pageCustomers', title: 'Clientes', load: loadCustomers },
@@ -1588,6 +1589,360 @@ window.deletePartner = async function(id) {
 };
 
 
+/* ── TRUST CHECK: clientes felices ───── */
+
+const TRUST_STORY_MAX_VIDEO = 50 * 1024 * 1024;
+let trustStoryMedia = [];
+
+function trustStoryKindLabel(type) {
+  if (type === 'youtube') return 'YouTube';
+  if (type === 'vimeo') return 'Vimeo';
+  if (type === 'video') return 'Video';
+  return 'Foto';
+}
+
+function trustStoryMediaSummary(media) {
+  const items = Array.isArray(media) ? media : [];
+  const photos = items.filter((item) => (item.type || 'image') === 'image').length;
+  const videos = items.length - photos;
+  const parts = [];
+  if (photos) parts.push(`${photos} foto${photos === 1 ? '' : 's'}`);
+  if (videos) parts.push(`${videos} video${videos === 1 ? '' : 's'}`);
+  return parts.join(' · ') || 'Sin medios';
+}
+
+function trustStoryStoragePath(url) {
+  const marker = '/storage/v1/object/public/site/';
+  const index = String(url || '').indexOf(marker);
+  if (index === -1) return '';
+  return decodeURIComponent(String(url).slice(index + marker.length).split('?')[0]);
+}
+
+async function loadTrustStories() {
+  const tbody = document.getElementById('trustStoriesBody');
+  if (!tbody) return;
+
+  const { data, error } = await sb
+    .from('trustcheck_stories')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    const missing = error.code === '42P01' || /trustcheck_stories/i.test(error.message || '');
+    tbody.innerHTML = `<tr><td colspan="5" class="text-muted" style="text-align:center;padding:2rem;color:var(--danger);">
+      ${missing
+        ? 'Ejecuta <code>sql/trustcheck_stories.sql</code> en Supabase para poder subir fotos y videos.'
+        : escapeHtml(error.message)}
+    </td></tr>`;
+    return;
+  }
+
+  const list = data || [];
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-muted" style="text-align:center;padding:2rem;">Todavía no hay clientes. Agrega a alguien que contrató TRUST CHECK y quedó feliz.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((story) => {
+    const media = Array.isArray(story.media) ? story.media : [];
+    const thumbs = media.slice(0, 3).map((item) => {
+      if ((item.type || 'image') === 'image' && item.url) {
+        return `<img src="${escapeHtml(item.url)}" alt="">`;
+      }
+      return `<span class="trust-story-mini-badge">${escapeHtml(trustStoryKindLabel(item.type))}</span>`;
+    }).join('');
+    const status = story.is_active
+      ? '<span class="status-badge disponible">Visible</span>'
+      : '<span class="status-badge cancelada">Oculto</span>';
+    const quote = story.quote
+      ? `<div class="text-muted" style="font-size:.82rem;margin-top:.2rem;">${escapeHtml(story.quote)}</div>`
+      : '';
+    return `
+    <tr>
+      <td><strong>${escapeHtml(story.customer_name)}</strong>${quote}</td>
+      <td>
+        <div class="trust-story-admin-thumbs">${thumbs}</div>
+        <div class="text-muted" style="font-size:.78rem;margin-top:.25rem;">${escapeHtml(trustStoryMediaSummary(media))}</div>
+      </td>
+      <td>${story.sort_order ?? 0}</td>
+      <td>${status}</td>
+      <td>
+        <div class="table-actions">
+          <button class="btn btn-ghost btn-sm" onclick="editTrustStory('${story.id}')" title="Editar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteTrustStory('${story.id}')" style="color:var(--danger);" title="Eliminar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function trustStoryFormHTML(story = {}) {
+  const e = escapeHtml;
+  return `
+    <form class="modal-form" id="trustStoryForm">
+      <input type="hidden" id="ts_id" value="${e(story.id || '')}">
+      <div class="form-group">
+        <label>Nombre del cliente *</label>
+        <input type="text" id="ts_name" value="${e(story.customer_name || '')}" required maxlength="80" placeholder="Ej: Camila Rojas">
+      </div>
+      <div class="form-group">
+        <label>Comentario <span class="text-muted">(opcional)</span></label>
+        <textarea id="ts_quote" maxlength="400" rows="3" placeholder="Ej: Encontraron el auto que buscaba y negociaron el precio.">${e(story.quote || '')}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Fotos y videos</label>
+        <p class="text-muted">Aparecen debajo de esta persona en TRUST CHECK. Fotos JPG, PNG o WebP, o un video MP4 de hasta 50 MB. Para un video más largo, pega un enlace de YouTube o Vimeo.</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.65rem;">
+          <input type="file" id="ts_files" accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" multiple hidden>
+          <button type="button" class="btn btn-outline btn-sm" id="ts_upload_btn">Subir fotos o videos</button>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">
+          <input type="url" id="ts_url" placeholder="https://youtube.com/… o enlace directo" style="flex:1;min-width:180px;">
+          <button type="button" class="btn btn-outline btn-sm" id="ts_add_url">Agregar enlace</button>
+        </div>
+        <div id="ts_media_list" class="trust-story-media-list"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Orden</label>
+          <input type="number" id="ts_sort" value="${story.sort_order ?? 0}" step="1">
+        </div>
+        <div class="form-group">
+          <label>Visible en TRUST CHECK</label>
+          <label class="checkbox-label" style="margin-top:.55rem;">
+            <input type="checkbox" id="ts_active" ${story.is_active !== false ? 'checked' : ''}>
+            Mostrar en el sitio
+          </label>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="ts_save">${story.id ? 'Guardar' : 'Publicar cliente'}</button>
+      </div>
+    </form>
+  `;
+}
+
+function renderTrustStoryMediaEditor() {
+  const list = document.getElementById('ts_media_list');
+  if (!list) return;
+  if (!trustStoryMedia.length) {
+    list.innerHTML = '<p class="text-muted" style="margin:.65rem 0 0;">Todavía no hay fotos ni videos. Se verán debajo del nombre.</p>';
+    return;
+  }
+  list.innerHTML = trustStoryMedia.map((item, index) => {
+    let preview = `<div class="trust-story-media-badge">${escapeHtml(trustStoryKindLabel(item.type))}</div>`;
+    if (item.type === 'image') preview = `<img src="${escapeHtml(item.url)}" alt="">`;
+    else if (item.type === 'video') preview = `<video src="${escapeHtml(item.url)}" muted playsinline preload="metadata"></video>`;
+    else if (item.type === 'youtube' && window.TrustCheckMedia?.youtubeId(item.url)) {
+      const id = window.TrustCheckMedia.youtubeId(item.url);
+      preview = `<img src="https://i.ytimg.com/vi/${escapeHtml(id)}/hqdefault.jpg" alt="">`;
+    }
+    return `
+      <div class="trust-story-media-item">
+        ${preview}
+        <div class="trust-story-media-meta">
+          <strong>${escapeHtml(trustStoryKindLabel(item.type))}</strong>
+          <span>${escapeHtml(item.url)}</span>
+        </div>
+        <div class="table-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-move="-1" data-index="${index}" ${index === 0 ? 'disabled' : ''} title="Mover arriba">↑</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-move="1" data-index="${index}" ${index === trustStoryMedia.length - 1 ? 'disabled' : ''} title="Mover abajo">↓</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-remove="${index}" style="color:var(--danger);">Quitar</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function bindTrustStoryForm() {
+  const form = document.getElementById('trustStoryForm');
+  if (!form) return;
+  form.addEventListener('submit', saveTrustStory);
+  renderTrustStoryMediaEditor();
+
+  document.getElementById('ts_media_list')?.addEventListener('click', (event) => {
+    const removeBtn = event.target.closest('[data-remove]');
+    const moveBtn = event.target.closest('[data-move]');
+    if (removeBtn) {
+      trustStoryMedia.splice(Number(removeBtn.dataset.remove), 1);
+      renderTrustStoryMediaEditor();
+      return;
+    }
+    if (!moveBtn || moveBtn.disabled) return;
+    const index = Number(moveBtn.dataset.index);
+    const next = index + Number(moveBtn.dataset.move);
+    if (next < 0 || next >= trustStoryMedia.length) return;
+    const [item] = trustStoryMedia.splice(index, 1);
+    trustStoryMedia.splice(next, 0, item);
+    renderTrustStoryMediaEditor();
+  });
+
+  const fileInput = document.getElementById('ts_files');
+  document.getElementById('ts_upload_btn')?.addEventListener('click', () => fileInput?.click());
+  fileInput?.addEventListener('change', () => uploadTrustStoryFiles(fileInput.files));
+
+  document.getElementById('ts_add_url')?.addEventListener('click', () => {
+    const input = document.getElementById('ts_url');
+    addTrustStoryUrl(input?.value || '');
+    if (input) input.value = '';
+  });
+}
+
+async function uploadTrustStoryFiles(fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  if (!(await isSiteBucketReady())) {
+    showToast('Falta el bucket «site». Ejecuta sql/trustcheck_stories.sql en Supabase.', 'error');
+    return;
+  }
+  const btn = document.getElementById('ts_upload_btn');
+  const saveBtn = document.getElementById('ts_save');
+  if (btn) { btn.disabled = true; btn.textContent = 'Subiendo…'; }
+  if (saveBtn) saveBtn.disabled = true;
+  try {
+    for (let i = 0; i < files.length; i += 1) {
+      if (btn) btn.textContent = `Subiendo ${i + 1} de ${files.length}…`;
+      const item = await uploadTrustStoryFile(files[i]);
+      trustStoryMedia.push(item);
+      renderTrustStoryMediaEditor();
+    }
+    showToast(files.length === 1 ? 'Archivo listo. Pulsa publicar para verlo en la web.' : 'Archivos listos. Pulsa publicar para verlos en la web.', 'success');
+  } catch (err) {
+    showToast(err.message || 'No se pudo subir el archivo', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Subir fotos o videos'; }
+    if (saveBtn) saveBtn.disabled = false;
+    const input = document.getElementById('ts_files');
+    if (input) input.value = '';
+  }
+}
+
+async function uploadTrustStoryFile(file) {
+  const isVideo = (file.type || '').startsWith('video/') || window.TrustCheckMedia?.isDirectVideo(file.name);
+  if (!isVideo && !(file.type || '').startsWith('image/')) {
+    throw new Error('Usa una foto (JPG, PNG o WebP) o un video MP4.');
+  }
+  if (isVideo && file.size > TRUST_STORY_MAX_VIDEO) {
+    throw new Error('El video supera 50 MB. Súbelo a YouTube o Vimeo y pega el enlace.');
+  }
+  const payload = isVideo ? file : await compressImageFile(file);
+  const rawExt = (payload.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')).toLowerCase();
+  const ext = rawExt.replace(/[^a-z0-9]/g, '') || (isVideo ? 'mp4' : 'jpg');
+  const path = `trustcheck/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const contentType = payload.type || (isVideo ? 'video/mp4' : 'image/jpeg');
+  const { error } = await sb.storage.from(SITE_BUCKET).upload(path, payload, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType,
+  });
+  if (error) {
+    const message = error.message || '';
+    if (/mime|type|size|413/i.test(message)) {
+      throw new Error('Supabase rechazó el archivo. Ejecuta sql/trustcheck_stories.sql para permitir videos de hasta 50 MB.');
+    }
+    throw error;
+  }
+  const { data } = sb.storage.from(SITE_BUCKET).getPublicUrl(path);
+  return { url: data.publicUrl, type: isVideo ? 'video' : 'image' };
+}
+
+function addTrustStoryUrl(raw) {
+  const url = String(raw || '').trim();
+  if (!url) return;
+  const mediaLib = window.TrustCheckMedia;
+  if (!mediaLib) {
+    showToast('Recarga el panel para clasificar el enlace.', 'error');
+    return;
+  }
+  if (mediaLib.isUnsupportedHost(url)) {
+    showToast('Ese enlace no se puede insertar. Usa YouTube, Vimeo o la URL directa del archivo.', 'error');
+    return;
+  }
+  const item = mediaLib.normalizeStoryMedia([{ url }])[0];
+  if (!item) {
+    showToast('El enlace no es válido. Debe empezar con https://', 'error');
+    return;
+  }
+  trustStoryMedia.push({ url: item.url, type: item.type });
+  renderTrustStoryMediaEditor();
+}
+
+function openTrustStoryModal(story) {
+  const normalized = window.TrustCheckMedia
+    ? window.TrustCheckMedia.normalizeStoryMedia(story?.media || [])
+    : [];
+  trustStoryMedia = normalized.map((item) => ({ url: item.url, type: item.type }));
+  openModal(story?.id ? 'Editar cliente feliz' : 'Nuevo cliente feliz', trustStoryFormHTML(story || {}), { wide: true });
+  bindTrustStoryForm();
+}
+
+window.editTrustStory = async function(id) {
+  const { data, error } = await sb.from('trustcheck_stories').select('*').eq('id', id).single();
+  if (error || !data) {
+    showToast('No se pudo cargar el cliente', 'error');
+    return;
+  }
+  openTrustStoryModal(data);
+};
+
+async function saveTrustStory(event) {
+  event.preventDefault();
+  const id = document.getElementById('ts_id').value;
+  const customer_name = document.getElementById('ts_name').value.trim();
+  if (!customer_name) {
+    showToast('El nombre es obligatorio', 'error');
+    return;
+  }
+  if (!trustStoryMedia.length) {
+    showToast('Agrega al menos una foto o un video', 'error');
+    return;
+  }
+  const payload = {
+    customer_name,
+    quote: document.getElementById('ts_quote').value.trim(),
+    media: trustStoryMedia.map((item) => ({ url: item.url, type: item.type })),
+    sort_order: parseInt(document.getElementById('ts_sort').value, 10) || 0,
+    is_active: document.getElementById('ts_active').checked,
+  };
+  const saveBtn = document.getElementById('ts_save');
+  if (saveBtn) saveBtn.disabled = true;
+  let error;
+  if (id) ({ error } = await sb.from('trustcheck_stories').update(payload).eq('id', id));
+  else ({ error } = await sb.from('trustcheck_stories').insert(payload));
+  if (saveBtn) saveBtn.disabled = false;
+  if (error) {
+    const missing = error.code === '42P01' || /trustcheck_stories/i.test(error.message || '');
+    showToast(missing ? 'Falta la tabla. Ejecuta sql/trustcheck_stories.sql en Supabase.' : ('Error: ' + error.message), 'error');
+    return;
+  }
+  showToast(id ? 'Cliente actualizado' : 'Cliente publicado en TRUST CHECK', 'success');
+  closeModal();
+  loadTrustStories();
+}
+
+window.deleteTrustStory = async function(id) {
+  if (!confirm('¿Quitar a este cliente de TRUST CHECK?')) return;
+  const { data: row } = await sb.from('trustcheck_stories').select('media').eq('id', id).single();
+  const paths = (Array.isArray(row?.media) ? row.media : [])
+    .map((item) => trustStoryStoragePath(item.url))
+    .filter(Boolean);
+  if (paths.length) {
+    await sb.storage.from(SITE_BUCKET).remove(paths);
+  }
+  const { error } = await sb.from('trustcheck_stories').delete().eq('id', id);
+  if (error) showToast('Error: ' + error.message, 'error');
+  else {
+    showToast('Cliente eliminado', 'success');
+    loadTrustStories();
+  }
+};
+
+
 /* ── Sales CRUD ──────────────────────── */
 
 async function loadSales() {
@@ -2191,6 +2546,11 @@ function initBindings() {
   bindOptional('btnNewPartner', 'click', () => {
     openModal('Nuevo Partner', partnerFormHTML({ is_active: true, sort_order: 0 }));
     bindPartnerForm();
+  });
+
+  bindOptional('btnNewTrustStory', 'click', async () => {
+    const { count } = await sb.from('trustcheck_stories').select('id', { count: 'exact', head: true });
+    openTrustStoryModal({ is_active: true, sort_order: count || 0, media: [] });
   });
 
   bindOptional('btnNewCustomer', 'click', () => {
